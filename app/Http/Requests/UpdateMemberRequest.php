@@ -32,6 +32,8 @@ class UpdateMemberRequest extends FormRequest
             'address'     => 'nullable|string|max:500',
             'occupation'  => 'nullable|string|max:255',
             'status'      => 'nullable|in:active,inactive,archived',
+            'photo'       => 'nullable|image|max:5120',
+            'family_id'   => 'nullable|exists:families,id',
         ];
     }
 }

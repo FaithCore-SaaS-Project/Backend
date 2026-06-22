@@ -53,7 +53,12 @@ class MemberController extends Controller implements HasMiddleware
             'address'   => $request->input('address'),
             'occupation'=> $request->input('occupation'),
             'membership_date' => $request->input('membership_date', now()->toDateString()),
+            'family_id' => $request->input('family_id'),
         ]);
+
+        if ($request->hasFile('photo')) {
+            $data['photo'] = $request->file('photo')->store('photos', 'public');
+        }
 
         $member = Member::create($data);
 
@@ -73,12 +78,22 @@ class MemberController extends Controller implements HasMiddleware
      */
     public function update(UpdateMemberRequest $request, Member $member)
     {
-        $member->update(array_merge($request->validated(), [
+        $data = array_merge($request->validated(), [
             'dob'       => $request->input('dob', $member->dob),
             'address'   => $request->input('address', $member->address),
             'occupation'=> $request->input('occupation', $member->occupation),
             'status'    => $request->input('status', $member->status),
-        ]));
+        ]);
+        
+        if ($request->has('family_id')) {
+            $data['family_id'] = $request->input('family_id');
+        }
+
+        if ($request->hasFile('photo')) {
+            $data['photo'] = $request->file('photo')->store('photos', 'public');
+        }
+
+        $member->update($data);
         return new MemberResource($member->fresh());
     }
 

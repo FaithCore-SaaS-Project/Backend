@@ -33,6 +33,8 @@ class StoreMemberRequest extends FormRequest
             'occupation'  => 'nullable|string|max:255',
             'status'      => 'nullable|in:active,inactive,archived',
             'membership_date' => 'nullable|date',
+            'photo'       => 'nullable|image|max:5120',
+            'family_id'   => 'nullable|exists:families,id',
         ];
     }
 }
