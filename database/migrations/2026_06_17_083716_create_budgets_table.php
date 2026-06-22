@@ -13,6 +13,16 @@ return new class extends Migration
     {
         Schema::create('budgets', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('church_id')->constrained();
+            $table->string('name');
+            $table->string('type'); // Operating, Capital, Ministry
+            $table->decimal('budget_amount', 12, 2)->default(0);
+            $table->decimal('spent_amount', 12, 2)->default(0);
+            $table->date('period_start');
+            $table->date('period_end');
+            $table->string('status')->default('In Progress');
+            $table->text('description')->nullable();
+            $table->date('created_on')->nullable();
             $table->timestamps();
         });
     }

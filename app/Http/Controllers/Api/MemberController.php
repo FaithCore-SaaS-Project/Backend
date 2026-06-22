@@ -10,15 +10,19 @@ use App\Http\Requests\UpdateMemberRequest;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 
-class MemberController extends Controller
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
+
+class MemberController extends Controller implements HasMiddleware
 {
-    public function __construct()
+    public static function middleware(): array
     {
-        // Require permissions for these actions
-        $this->middleware('permission:view_members')->only(['index', 'show']);
-        $this->middleware('permission:create_members')->only(['store']);
-        $this->middleware('permission:edit_members')->only(['update']);
-        $this->middleware('permission:delete_members')->only(['destroy']);
+        return [
+            new Middleware('permission:view_members', only: ['index', 'show']),
+            new Middleware('permission:create_members', only: ['store']),
+            new Middleware('permission:edit_members', only: ['update']),
+            new Middleware('permission:delete_members', only: ['destroy']),
+        ];
     }
 
     /**

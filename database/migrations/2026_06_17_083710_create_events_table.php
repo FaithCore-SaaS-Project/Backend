@@ -12,16 +12,22 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('events', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('church_id')
-          ->constrained();
-    $table->string('event_name');
-    $table->dateTime('event_date');
-    $table->string('venue');
-    $table->longText('description')
-          ->nullable();
-    $table->timestamps();
-});
+            $table->id();
+            $table->foreignId('church_id')->constrained();
+            $table->string('event_name');
+            $table->string('subtitle')->nullable();
+            $table->string('type')->default('Worship');
+            $table->dateTime('event_date');
+            $table->string('event_time')->default('8:00 AM - 10:00 AM');
+            $table->string('venue'); // acts as location
+            $table->integer('attendees')->default(0);
+            $table->integer('max_capacity')->default(100);
+            $table->string('status')->default('Upcoming');
+            $table->string('organizer')->default('Pastor John');
+            $table->longText('description')->nullable();
+            $table->date('created_on')->nullable();
+            $table->timestamps();
+        });
     }
 
     /**

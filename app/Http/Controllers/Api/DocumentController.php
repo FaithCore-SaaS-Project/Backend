@@ -7,13 +7,17 @@ use Illuminate\Http\Request;
 use App\Models\Document;
 use Illuminate\Support\Facades\Storage;
 
-class DocumentController extends Controller
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
+
+class DocumentController extends Controller implements HasMiddleware
 {
-    public function __construct()
+    public static function middleware(): array
     {
-        // Enforce role permissions (optional, based on Phase 7)
-        $this->middleware('permission:view_documents')->only(['index', 'show']);
-        $this->middleware('permission:manage_documents')->only(['store', 'upload', 'update', 'destroy']);
+        return [
+            new Middleware('permission:view_documents', only: ['index', 'show']),
+            new Middleware('permission:manage_documents', only: ['store', 'upload', 'update', 'destroy']),
+        ];
     }
 
     public function index()

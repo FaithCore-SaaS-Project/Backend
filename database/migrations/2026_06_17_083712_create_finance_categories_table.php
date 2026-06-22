@@ -13,6 +13,13 @@ return new class extends Migration
     {
         Schema::create('finance_categories', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('church_id')->constrained();
+            $table->string('name');
+            $table->string('type'); // Income or Expense
+            $table->text('description')->nullable();
+            $table->string('status')->default('Active');
+            $table->date('created_on')->nullable();
+            $table->string('created_by')->nullable();
             $table->timestamps();
         });
     }

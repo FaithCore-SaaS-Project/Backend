@@ -13,6 +13,19 @@ return new class extends Migration
     {
         Schema::create('bank_accounts', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('church_id')->constrained();
+            $table->string('bank_name');
+            $table->string('account_name');
+            $table->string('account_number');
+            $table->string('account_type'); // Current or Savings
+            $table->decimal('balance', 12, 2)->default(0);
+            $table->decimal('ledger_balance', 12, 2)->default(0);
+            $table->string('status')->default('Active');
+            $table->string('branch')->nullable();
+            $table->string('currency')->default('LKR');
+            $table->date('last_statement_date')->nullable();
+            $table->date('created_on')->nullable();
+            $table->string('created_by')->nullable();
             $table->timestamps();
         });
     }

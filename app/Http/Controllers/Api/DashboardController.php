@@ -44,8 +44,7 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        $recentDonations = FinanceIncome::with('category')
-            ->orderBy('income_date', 'desc')
+        $recentDonations = FinanceIncome::orderBy('income_date', 'desc')
             ->take(5)
             ->get();
 

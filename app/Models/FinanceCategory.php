@@ -6,19 +6,19 @@ use App\Models\Traits\BelongsToChurch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class FinanceIncome extends Model
+class FinanceCategory extends Model
 {
     use HasFactory, BelongsToChurch;
 
-    protected $table = 'finance_income';
+    protected $table = 'finance_categories';
 
     protected $fillable = [
         'church_id',
-        'category',
-        'amount',
-        'income_date',
-        'method',
-        'receipt',
-        'description'
+        'name',
+        'type',
+        'description',
+        'status',
+        'created_on',
+        'created_by'
     ];
 }

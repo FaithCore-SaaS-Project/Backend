@@ -71,14 +71,29 @@ Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->group(function ()
     Route::post('/events/register', [EventController::class, 'register']);
     
     // Finance Routes
-    Route::get('/income', [FinanceController::class, 'incomeIndex']);
+    Route::get('/finance/records', [FinanceController::class, 'recordsIndex']);
+    Route::delete('/finance/records/{id}', [FinanceController::class, 'recordsDestroy']);
+
     Route::post('/income', [FinanceController::class, 'incomeStore']);
-    Route::get('/expenses', [FinanceController::class, 'expenseIndex']);
+    Route::put('/income/{id}', [FinanceController::class, 'incomeUpdate']);
+
     Route::post('/expenses', [FinanceController::class, 'expenseStore']);
-    Route::get('/budgets', [FinanceController::class, 'budgetIndex']);
-    Route::post('/budgets', [FinanceController::class, 'budgetStore']);
+    Route::put('/expenses/{id}', [FinanceController::class, 'expenseUpdate']);
+
+    Route::get('/finance-categories', [FinanceController::class, 'categoriesIndex']);
+    Route::post('/finance-categories', [FinanceController::class, 'categoriesStore']);
+    Route::put('/finance-categories/{id}', [FinanceController::class, 'categoriesUpdate']);
+    Route::delete('/finance-categories/{id}', [FinanceController::class, 'categoriesDestroy']);
+
     Route::get('/bank-accounts', [FinanceController::class, 'bankAccountsIndex']);
     Route::post('/bank-accounts', [FinanceController::class, 'bankAccountsStore']);
+    Route::put('/bank-accounts/{id}', [FinanceController::class, 'bankAccountsUpdate']);
+    Route::delete('/bank-accounts/{id}', [FinanceController::class, 'bankAccountsDestroy']);
+
+    Route::get('/budgets', [FinanceController::class, 'budgetIndex']);
+    Route::post('/budgets', [FinanceController::class, 'budgetStore']);
+    Route::put('/budgets/{id}', [FinanceController::class, 'budgetUpdate']);
+    Route::delete('/budgets/{id}', [FinanceController::class, 'budgetDestroy']);
 
     // Documents & Certificates
     Route::apiResource('documents', DocumentController::class);

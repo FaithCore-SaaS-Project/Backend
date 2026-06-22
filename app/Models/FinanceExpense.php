@@ -3,23 +3,22 @@
 namespace App\Models;
 
 use App\Models\Traits\BelongsToChurch;
-
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class FinanceExpense extends Model
 {
-    use BelongsToChurch;
-
-    use HasFactory;
+    use HasFactory, BelongsToChurch;
 
     protected $table = 'finance_expenses';
+
     protected $fillable = [
         'church_id',
-        'category_id',
+        'category',
         'amount',
         'expense_date',
+        'method',
+        'receipt',
         'description'
     ];
-
-    public function category() { return $this->belongsTo(FinanceCategory::class, 'category_id'); }
 }

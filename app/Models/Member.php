@@ -3,14 +3,12 @@
 namespace App\Models;
 
 use App\Models\Traits\BelongsToChurch;
-
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Member extends Model
 {
-    use BelongsToChurch;
-
-    use HasFactory;
+    use HasFactory, BelongsToChurch;
 
     protected $fillable = [
         'church_id',
@@ -45,8 +43,13 @@ class Member extends Model
         return $this->hasMany(Certificate::class);
     }
 
-    public function family() { return $this->belongsTo(Family::class); }
-    public function certificates() { return $this->hasMany(Certificate::class); }
-    public function departments() { return $this->belongsToMany(Department::class, 'department_members'); }
-    public function events() { return $this->belongsToMany(Event::class, 'event_registrations'); }
+    public function departments()
+    {
+        return $this->belongsToMany(Department::class, 'department_members');
+    }
+
+    public function events()
+    {
+        return $this->belongsToMany(Event::class, 'event_registrations');
+    }
 }

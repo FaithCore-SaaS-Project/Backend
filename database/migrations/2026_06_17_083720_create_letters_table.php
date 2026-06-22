@@ -13,6 +13,17 @@ return new class extends Migration
     {
         Schema::create('letters', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('church_id')->constrained()->onDelete('cascade');
+            $table->string('title');
+            $table->string('letter_type');
+            $table->string('recipient');
+            $table->string('recipient_email')->nullable();
+            $table->string('recipient_phone')->nullable();
+            $table->date('issue_date');
+            $table->string('status')->default('Draft');
+            $table->string('sent_by');
+            $table->text('content')->nullable();
+            $table->string('pdf_file')->nullable();
             $table->timestamps();
         });
     }

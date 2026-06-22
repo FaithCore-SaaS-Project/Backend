@@ -12,19 +12,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('certificates', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('church_id')
-          ->constrained();
-    $table->foreignId('member_id')
-          ->constrained();
-    $table->string('certificate_type');
-    $table->string('certificate_number')
-          ->unique();
-    $table->date('issue_date');
-    $table->string('pdf_file')
-          ->nullable();
-    $table->timestamps();
-});
+            $table->id();
+            $table->foreignId('church_id')->constrained()->onDelete('cascade');
+            $table->string('name');
+            $table->string('type');
+            $table->string('recipient');
+            $table->string('recipient_email')->nullable();
+            $table->string('recipient_phone')->nullable();
+            $table->date('issued_date');
+            $table->string('issued_by');
+            $table->string('status')->default('Draft');
+            $table->string('pdf_file')->nullable();
+            $table->timestamps();
+        });
     }
 
     /**

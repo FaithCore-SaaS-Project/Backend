@@ -12,17 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('finance_income', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('church_id')
-          ->constrained();
-    $table->foreignId('category_id')
-          ->constrained('finance_categories');
-    $table->decimal('amount',12,2);
-    $table->date('income_date');
-    $table->text('description')
-          ->nullable();
-    $table->timestamps();
-});
+            $table->id();
+            $table->foreignId('church_id')->constrained();
+            $table->string('category');
+            $table->decimal('amount', 12, 2);
+            $table->date('income_date');
+            $table->string('method')->default('Cash');
+            $table->string('receipt')->nullable();
+            $table->text('description')->nullable();
+            $table->timestamps();
+        });
     }
 
     /**

@@ -10,7 +10,16 @@ class Certificate extends Model
 {
     use BelongsToChurch;
 
-    //
-
-    public function member() { return $this->belongsTo(Member::class); }
+    protected $fillable = [
+        'church_id',
+        'name',
+        'type',
+        'recipient',
+        'recipient_email',
+        'recipient_phone',
+        'issued_date',
+        'issued_by',
+        'status',
+        'pdf_file'
+    ];
 }

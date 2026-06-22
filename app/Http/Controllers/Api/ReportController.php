@@ -19,12 +19,10 @@ class ReportController extends Controller
         $endDate = $request->query('end_date', Carbon::now()->endOfMonth()->toDateString());
         $format = $request->query('format', 'json');
 
-        $incomes = FinanceIncome::with('category')
-            ->whereBetween('income_date', [$startDate, $endDate])
+        $incomes = FinanceIncome::whereBetween('income_date', [$startDate, $endDate])
             ->get();
             
-        $expenses = FinanceExpense::with('category')
-            ->whereBetween('expense_date', [$startDate, $endDate])
+        $expenses = FinanceExpense::whereBetween('expense_date', [$startDate, $endDate])
             ->get();
 
         $totalIncome = $incomes->sum('amount');
@@ -52,10 +50,10 @@ class ReportController extends Controller
                 $file = fopen('php://output', 'w');
                 fputcsv($file, ['Type', 'Category', 'Amount', 'Date', 'Description']);
                 foreach ($incomes as $i) {
-                    fputcsv($file, ['Income', $i->category->name ?? 'N/A', $i->amount, $i->income_date, $i->description]);
+                    fputcsv($file, ['Income', $i->category ?? 'N/A', $i->amount, $i->income_date, $i->description]);
                 }
                 foreach ($expenses as $e) {
-                    fputcsv($file, ['Expense', $e->category->name ?? 'N/A', $e->amount, $e->expense_date, $e->description]);
+                    fputcsv($file, ['Expense', $e->category ?? 'N/A', $e->amount, $e->expense_date, $e->description]);
                 }
                 fclose($file);
             }, "financial_report.csv");
