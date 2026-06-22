@@ -11,15 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('settings', function (Blueprint $table) {
+        Schema::create('saved_reports', function (Blueprint $table) {
             $table->id();
             $table->foreignId('church_id')->constrained()->onDelete('cascade');
-            $table->string('key');
-            $table->text('value')->nullable();
-            $table->string('group')->default('general');
+            $table->string('name');
+            $table->string('type');
+            $table->string('category')->nullable();
+            $table->string('date_range')->nullable();
             $table->timestamps();
-            
-            $table->unique(['church_id', 'key']);
         });
     }
 
@@ -28,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('settings');
+        Schema::dropIfExists('saved_reports');
     }
 };

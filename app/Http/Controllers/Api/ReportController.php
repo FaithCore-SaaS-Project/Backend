@@ -135,4 +135,47 @@ class ReportController extends Controller
 
         return response()->json($data);
     }
+
+    public function getSavedReports(Request $request)
+    {
+        $reports = \App\Models\SavedReport::orderBy('created_at', 'desc')->get();
+        $mapped = $reports->map(function ($r) {
+            return [
+                'id' => $r->id,
+                'name' => $r->name,
+                'type' => $r->type,
+                'category' => $r->category,
+                'dateRange' => $r->date_range,
+                'createdOn' => $r->created_at->format('Y-m-d'),
+                'tenantId' => $r->church_id
+            ];
+        });
+        return response()->json($mapped);
+    }
+
+    public function storeSavedReport(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string',
+            'type' => 'required|string',
+            'category' => 'nullable|string',
+            'dateRange' => 'nullable|string'
+        ]);
+
+        $report = \App\Models\SavedReport::create([
+            'church_id' => $request->user()->church_id,
+            'name' => $data['name'],
+            'type' => $data['type'],
+            'category' => $data['category'],
+            'date_range' => $data['dateRange']
+        ]);
+
+        return response()->json($report, 201);
+    }
+
+    public function deleteSavedReport($id)
+    {
+        \App\Models\SavedReport::findOrFail($id)->delete();
+        return response()->json(['message' => 'Deleted successfully']);
+    }
 }

@@ -114,6 +114,9 @@ Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->group(function ()
     Route::post('/notifications/send', [NotificationController::class, 'send']);
 
     // Reports
+    Route::get('/reports/saved', [ReportController::class, 'getSavedReports']);
+    Route::post('/reports/saved', [ReportController::class, 'storeSavedReport']);
+    Route::delete('/reports/saved/{id}', [ReportController::class, 'deleteSavedReport']);
     Route::get('/reports/financial', [ReportController::class, 'financial']);
     Route::get('/reports/members', [ReportController::class, 'members']);
     Route::get('/reports/attendance', [ReportController::class, 'attendance']);

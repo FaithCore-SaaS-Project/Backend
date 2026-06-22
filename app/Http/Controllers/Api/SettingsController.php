@@ -10,40 +10,27 @@ class SettingsController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $settings = \App\Models\Setting::all()->pluck('value', 'key');
+        return response()->json($settings);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store or update settings in bulk.
      */
     public function store(Request $request)
     {
-        //
-    }
+        $data = $request->all();
+        $churchId = $request->user()->church_id;
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
+        foreach ($data as $key => $value) {
+            \App\Models\Setting::updateOrCreate(
+                ['church_id' => $churchId, 'key' => $key],
+                ['value' => $value]
+            );
+        }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return response()->json(['message' => 'Settings saved successfully']);
     }
 }
