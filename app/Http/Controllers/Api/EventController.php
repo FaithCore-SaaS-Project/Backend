@@ -149,7 +149,8 @@ class EventController extends Controller implements HasMiddleware
                 'member_id' => $validated['member_id']
             ],
             [
-                'status' => $validated['status'] ?? 'registered'
+                'status' => $validated['status'] ?? 'registered',
+                'church_id' => $request->user()->church_id,
             ]
         );
 
@@ -164,6 +165,32 @@ class EventController extends Controller implements HasMiddleware
             'registration' => $registration,
             'attendees' => $event->attendees
         ]);
+    }
+
+    public function getAttendance(string $id)
+    {
+        $attendances = \App\Models\EventAttendance::where('event_id', $id)->with('member')->get();
+        return response()->json($attendances);
+    }
+
+    public function markAttendance(Request $request, string $id)
+    {
+        $validated = $request->validate([
+            'member_id' => 'required|exists:members,id',
+            'status' => 'required|string|in:present,absent,excused',
+            'notes' => 'nullable|string'
+        ]);
+
+        $attendance = \App\Models\EventAttendance::updateOrCreate(
+            ['event_id' => $id, 'member_id' => $validated['member_id']],
+            [
+                'church_id' => $request->user()->church_id,
+                'status' => $validated['status'],
+                'notes' => $validated['notes']
+            ]
+        );
+
+        return response()->json($attendance);
     }
 
     /**

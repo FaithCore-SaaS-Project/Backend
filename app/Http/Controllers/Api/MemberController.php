@@ -105,4 +105,21 @@ class MemberController extends Controller implements HasMiddleware
         $member->delete();
         return response()->json(['message' => 'Member deleted successfully.']);
     }
+
+    /**
+     * Import members from Excel/CSV file.
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,csv,xls|max:10240'
+        ]);
+
+        try {
+            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\MembersImport, $request->file('file'));
+            return response()->json(['message' => 'Members imported successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to import members', 'error' => $e->getMessage()], 500);
+        }
+    }
 }

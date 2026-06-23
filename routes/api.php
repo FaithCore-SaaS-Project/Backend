@@ -64,11 +64,14 @@ Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->group(function ()
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
     
     // Core Modules
+    Route::post('/members/import', [MemberController::class, 'import']);
     Route::apiResource('members', MemberController::class);
     Route::apiResource('families', FamilyController::class);
     Route::apiResource('departments', DepartmentController::class);
     Route::apiResource('events', EventController::class);
     Route::post('/events/register', [EventController::class, 'register']);
+    Route::get('/events/{id}/attendance', [EventController::class, 'getAttendance']);
+    Route::post('/events/{id}/attendance', [EventController::class, 'markAttendance']);
     
     // Finance Routes
     Route::get('/finance/records', [FinanceController::class, 'recordsIndex']);
