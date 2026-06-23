@@ -28,6 +28,16 @@ class Member extends Model
         'status'
     ];
 
+    protected $appends = ['photo_url'];
+
+    public function getPhotoUrlAttribute()
+    {
+        if ($this->photo) {
+            return url(\Illuminate\Support\Facades\Storage::url($this->photo));
+        }
+        return null;
+    }
+
     public function church()
     {
         return $this->belongsTo(Church::class);

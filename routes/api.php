@@ -113,8 +113,9 @@ Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->group(function ()
 
     // Settings & Notifications
     Route::apiResource('settings', SettingsController::class);
-    Route::apiResource('notifications', NotificationController::class);
+    Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/send', [NotificationController::class, 'send']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
 
     // Reports
     Route::get('/reports/saved', [ReportController::class, 'getSavedReports']);
