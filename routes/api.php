@@ -105,6 +105,7 @@ Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->group(function ()
     Route::get('/certificates/{id}/pdf', [CertificateController::class, 'generatePdf']);
     Route::get('/certificates/{id}/verify', [CertificateController::class, 'verify']);
     Route::apiResource('letters', LetterController::class);
+    Route::get('/letters/{id}/pdf', [LetterController::class, 'generatePdf']);
 
     // Users, Roles & Permissions
     Route::apiResource('users', UserController::class);

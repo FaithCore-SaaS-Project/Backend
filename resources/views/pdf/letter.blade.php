@@ -19,8 +19,23 @@
 </head>
 <body>
     <div class="header">
-        <h1 class="church-name">{{ $church->name }}</h1>
-        <p class="church-address">{{ $church->address ?? 'Church Address' }}</p>
+        <table style="width: 100%;">
+            <tr>
+                <td style="width: 100px; vertical-align: top;">
+                    @if(isset($church->logo_path) && $church->logo_path)
+                        <img src="{{ public_path('storage/' . $church->logo_path) }}" alt="Church Logo" style="max-height: 80px;">
+                    @else
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background-color: #5B3DF5; color: white; display: inline-block; line-height: 80px; font-size: 24px; font-weight: bold; text-align: center;">
+                            {{ substr($church->name, 0, 1) }}
+                        </div>
+                    @endif
+                </td>
+                <td style="vertical-align: middle;">
+                    <h1 class="church-name">{{ $church->name }}</h1>
+                    <p class="church-address">{{ $church->address ?? 'Church Address' }}</p>
+                </td>
+            </tr>
+        </table>
     </div>
     
     <div class="date">

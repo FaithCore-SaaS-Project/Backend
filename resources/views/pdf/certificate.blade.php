@@ -17,6 +17,15 @@
 </head>
 <body>
     <div class="border-box">
+        <div style="margin-bottom: 20px;">
+            @if(isset($church->logo_path) && $church->logo_path)
+                <img src="{{ public_path('storage/' . $church->logo_path) }}" alt="Church Logo" style="max-height: 80px;">
+            @else
+                <div style="width: 80px; height: 80px; border-radius: 50%; background-color: #5B3DF5; color: white; display: inline-block; line-height: 80px; font-size: 24px; font-weight: bold;">
+                    {{ substr($church->name, 0, 1) }}
+                </div>
+            @endif
+        </div>
         <h1 class="church-name">{{ $church->name }}</h1>
         <h2 class="cert-type">{{ $certificate->type }} Certificate</h2>
         <p class="certifies">This is to certify that</p>
