@@ -63,4 +63,55 @@ class CheckoutController extends Controller
 
         return response()->json(['error' => 'Unable to create PayPal order.', 'details' => $response], 500);
     }
+
+    public function payhereSession(Request $request)
+    {
+        $request->validate([
+            'plan_name' => 'required|string',
+            'success_url' => 'required|url',
+            'cancel_url' => 'required|url',
+        ]);
+
+        $church = $request->user()->church;
+        $plan = Plan::where('name', $request->plan_name)->firstOrFail();
+
+        // Fetch or create a pending subscription
+        $subscription = Subscription::firstOrCreate(
+            ['church_id' => $church->id, 'status' => 'pending'],
+            ['plan_id' => $plan->id, 'start_date' => now(), 'end_date' => now()->addMonth()]
+        );
+
+        $subscription->update(['plan_id' => $plan->id]);
+
+        $merchantId = env('PAYHERE_MERCHANT_ID');
+        $merchantSecret = env('PAYHERE_SECRET');
+        $currency = 'LKR';
+        // In this implementation, the plan price in DB is assumed to be in LKR or USD, adjust accordingly.
+        // For PayHere local, we will use LKR, but let's just use the plan's raw price.
+        $amount = number_format($plan->price, 2, '.', '');
+        $orderId = (string)$subscription->id;
+
+        // Generate the PayHere Hash
+        $hash = strtoupper(md5($merchantId . $orderId . $amount . $currency . strtoupper(md5($merchantSecret))));
+
+        return response()->json([
+            'merchant_id' => $merchantId,
+            'return_url' => $request->success_url,
+            'cancel_url' => $request->cancel_url,
+            'notify_url' => config('app.url') . '/api/webhooks/payhere',
+            'order_id' => $orderId,
+            'items' => 'FaithCore ' . $plan->name . ' Plan',
+            'currency' => $currency,
+            'amount' => $amount,
+            'first_name' => $request->user()->name,
+            'last_name' => '',
+            'email' => $request->user()->email,
+            'phone' => '0770000000',
+            'address' => 'Sri Lanka',
+            'city' => 'Colombo',
+            'country' => 'Sri Lanka',
+            'hash' => $hash,
+            'payhere_url' => env('PAYHERE_ENV', 'sandbox') === 'live' ? 'https://www.payhere.lk/pay/checkout' : 'https://sandbox.payhere.lk/pay/checkout'
+        ]);
+    }
 }
