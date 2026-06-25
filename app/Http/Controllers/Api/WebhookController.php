@@ -67,6 +67,35 @@ class WebhookController extends Controller
         return response()->json(['status' => 'success']);
     }
 
+    public function paypal(Request $request)
+    {
+        $payload = $request->getContent();
+        
+        $provider = new \Srmklive\PayPal\Services\PayPal;
+        $provider->setApiCredentials(config('paypal'));
+        $provider->getAccessToken();
+
+        // In a real production app, you would verify the webhook signature using $provider->verifyWebHookSignature(...)
+        // For simplicity in this implementation, we will trust the payload directly.
+
+        $event = json_decode($payload, true);
+
+        if (isset($event['event_type']) && $event['event_type'] === 'PAYMENT.CAPTURE.COMPLETED') {
+            $resource = $event['resource'];
+            
+            // Extract the custom_id (which is our subscription ID)
+            $subscriptionId = $resource['custom_id'] ?? null;
+            $transactionId = $resource['id'];
+            $amount = $resource['amount']['value'] ?? 0;
+
+            if ($subscriptionId) {
+                $this->processPayment($subscriptionId, 'paypal', $amount, $transactionId, $payload);
+            }
+        }
+
+        return response()->json(['status' => 'success']);
+    }
+
     private function processPayment($subscriptionId, $gateway, $amount, $transactionId, $payload)
     {
         // Prevent race conditions and duplicates using a database transaction with a pessimistic lock

@@ -32,6 +32,7 @@ Route::post('/mobile/login', [WebAuthController::class, 'login']);
 // Webhook Endpoints (Unprotected)
 Route::post('/webhooks/stripe', [WebhookController::class, 'stripe']);
 Route::post('/webhooks/payhere', [WebhookController::class, 'payhere']);
+Route::post('/webhooks/paypal', [WebhookController::class, 'paypal']);
 
 // Protected Mobile APIs
 Route::middleware(['auth:sanctum', 'tenant'])->prefix('mobile')->group(function () {
@@ -56,6 +57,7 @@ Route::middleware(['auth:sanctum', 'tenant'])->group(function () {
     
     Route::post('/checkout/stripe', [CheckoutController::class, 'stripeSession']);
     Route::post('/checkout/payhere', [CheckoutController::class, 'payhereSession']);
+    Route::post('/checkout/paypal', [CheckoutController::class, 'paypalSession']);
 });
 
 // Protected Web SaaS APIs (Strict Subscription Access)

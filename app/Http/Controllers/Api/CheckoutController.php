@@ -4,46 +4,63 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Srmklive\PayPal\Services\PayPal as PayPalClient;
+use App\Models\Subscription;
+use App\Models\Plan;
 
 class CheckoutController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function paypalSession(Request $request)
     {
-        //
-    }
+        $request->validate([
+            'plan_name' => 'required|string',
+            'success_url' => 'required|url',
+            'cancel_url' => 'required|url',
+        ]);
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
+        $church = $request->user()->church;
+        // In a real app we'd fetch the Plan from DB using name or ID.
+        // If Plan table uses names like 'Basic', we can do:
+        $plan = Plan::where('name', $request->plan_name)->firstOrFail();
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
+        // Fetch or create a pending subscription to attach to the custom_id
+        $subscription = Subscription::firstOrCreate(
+            ['church_id' => $church->id, 'status' => 'pending'],
+            ['plan_id' => $plan->id, 'start_date' => now(), 'end_date' => now()->addMonth()]
+        );
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+        $subscription->update(['plan_id' => $plan->id]);
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $provider = new PayPalClient;
+        $provider->setApiCredentials(config('paypal'));
+        $provider->getAccessToken();
+
+        $response = $provider->createOrder([
+            "intent" => "CAPTURE",
+            "application_context" => [
+                "return_url" => $request->success_url,
+                "cancel_url" => $request->cancel_url,
+            ],
+            "purchase_units" => [
+                [
+                    "reference_id" => (string)$subscription->id,
+                    "custom_id" => (string)$subscription->id,
+                    "amount" => [
+                        "currency_code" => "USD",
+                        "value" => number_format($plan->price, 2, '.', '')
+                    ]
+                ]
+            ]
+        ]);
+
+        if (isset($response['id']) && $response['id'] != null) {
+            foreach ($response['links'] as $links) {
+                if ($links['rel'] == 'approve') {
+                    return response()->json(['url' => $links['href']]);
+                }
+            }
+        }
+
+        return response()->json(['error' => 'Unable to create PayPal order.', 'details' => $response], 500);
     }
 }
