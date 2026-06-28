@@ -11,13 +11,23 @@ class AuthController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'password' => 'required'
+            'password' => 'required',
+            'church_id' => 'nullable|string'
         ]);
 
         $user = \App\Models\User::where('email', $request->email)->first();
 
         if (!$user || !\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Invalid credentials'], 401);
+        }
+
+        if ($request->filled('church_id')) {
+            $churchIdMatches = ($user->church_id == $request->church_id) || 
+                               ($user->church && $user->church->registration_no == $request->church_id);
+            
+            if (!$churchIdMatches) {
+                return response()->json(['message' => 'The provided Church/Activation ID does not match this account.'], 401);
+            }
         }
 
         $user->last_login = now();
