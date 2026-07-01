@@ -47,11 +47,15 @@ Route::middleware(['auth:sanctum', 'tenant'])->prefix('mobile')->group(function 
     Route::post('/logout', [WebAuthController::class, 'logout']);
     Route::get('/me', [WebAuthController::class, 'me']);
     
-    // Dashboard
+    // Dashboard & Church
     Route::get('/dashboard/stats', [\App\Http\Controllers\Api\Mobile\DashboardController::class, 'getStats']);
+    Route::get('/church/details', [\App\Http\Controllers\Api\Mobile\ChurchController::class, 'details']);
     
     Route::get('/user', function (Request $request) {
-        return $request->user()->load('church');
+        return response()->json([
+            'success' => true,
+            'data' => $request->user()->load(['church', 'member'])
+        ]);
     });
 
     Route::apiResource('members', \App\Http\Controllers\Api\Mobile\MemberController::class);
