@@ -34,15 +34,31 @@ Route::post('/webhooks/stripe', [WebhookController::class, 'stripe']);
 Route::post('/webhooks/payhere', [WebhookController::class, 'payhere']);
 Route::post('/webhooks/paypal', [WebhookController::class, 'paypal']);
 
+// Mobile Onboarding APIs (Unprotected)
+Route::prefix('mobile/onboarding')->group(function () {
+    Route::post('/find-church', [\App\Http\Controllers\Api\Mobile\OnboardingController::class, 'findChurch']);
+    Route::post('/send-otp', [\App\Http\Controllers\Api\Mobile\OnboardingController::class, 'sendOtp']);
+    Route::post('/verify-otp', [\App\Http\Controllers\Api\Mobile\OnboardingController::class, 'verifyOtp']);
+    Route::post('/register', [\App\Http\Controllers\Api\Mobile\OnboardingController::class, 'register']);
+});
+
 // Protected Mobile APIs
 Route::middleware(['auth:sanctum', 'tenant'])->prefix('mobile')->group(function () {
     Route::post('/logout', [WebAuthController::class, 'logout']);
+    Route::get('/me', [WebAuthController::class, 'me']);
+    
+    // Dashboard
+    Route::get('/dashboard/stats', [\App\Http\Controllers\Api\Mobile\DashboardController::class, 'getStats']);
     
     Route::get('/user', function (Request $request) {
         return $request->user()->load('church');
     });
 
     Route::apiResource('members', \App\Http\Controllers\Api\Mobile\MemberController::class);
+    Route::apiResource('prayer-requests', \App\Http\Controllers\Api\Mobile\PrayerRequestController::class);
+    Route::apiResource('announcements', \App\Http\Controllers\Api\Mobile\AnnouncementController::class);
+    Route::apiResource('events', \App\Http\Controllers\Api\Mobile\EventController::class);
+    Route::post('/give', [\App\Http\Controllers\Api\Mobile\FinanceController::class, 'storeDonation']);
 });
 
 // Protected Web SaaS APIs (Basic Tenant Access)
