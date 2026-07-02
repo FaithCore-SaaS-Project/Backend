@@ -63,6 +63,23 @@ Route::middleware(['auth:sanctum', 'tenant'])->prefix('mobile')->group(function 
     Route::apiResource('announcements', \App\Http\Controllers\Api\Mobile\AnnouncementController::class);
     Route::apiResource('events', \App\Http\Controllers\Api\Mobile\EventController::class);
     Route::post('/give', [\App\Http\Controllers\Api\Mobile\FinanceController::class, 'storeDonation']);
+
+    // Finance Categories
+    Route::get('/finance-categories', [\App\Http\Controllers\Api\Mobile\FinanceController::class, 'getCategories']);
+
+    // Giving History
+    Route::get('/giving/history', [\App\Http\Controllers\Api\Mobile\FinanceController::class, 'givingHistory']);
+
+    // Event Registration
+    Route::post('/events/{id}/register', [\App\Http\Controllers\Api\Mobile\EventController::class, 'register']);
+
+    // Profile Management
+    Route::post('/user/update', [\App\Http\Controllers\Api\Mobile\AuthController::class, 'updateProfile']);
+    Route::post('/user/avatar', [\App\Http\Controllers\Api\Mobile\AuthController::class, 'uploadAvatar']);
+
+    // Family Management
+    Route::get('/family', [\App\Http\Controllers\Api\Mobile\FamilyController::class, 'myFamily']);
+    Route::post('/family/members', [\App\Http\Controllers\Api\Mobile\FamilyController::class, 'addMember']);
 });
 
 // Protected Web SaaS APIs (Basic Tenant Access)

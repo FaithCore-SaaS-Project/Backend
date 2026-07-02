@@ -44,4 +44,9 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Church::class);
     }
+
+    public function member()
+    {
+        return $this->hasOne(Member::class, 'email', 'email');
+    }
 }

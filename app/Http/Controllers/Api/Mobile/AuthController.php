@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -40,6 +41,82 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Logged out successfully'
+        ]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'first_name' => 'sometimes|required|string|max:100',
+            'last_name'  => 'sometimes|required|string|max:100',
+            'email'      => 'sometimes|required|email|unique:users,email,' . $user->id,
+            'phone'      => 'sometimes|nullable|string|max:30',
+            'gender'     => 'sometimes|nullable|in:Male,Female,Other',
+            'dob'        => 'sometimes|nullable|date',
+            'address'    => 'sometimes|nullable|string|max:255',
+        ]);
+
+        // Update user table fields
+        $userFields = array_filter([
+            'first_name' => $validated['first_name'] ?? null,
+            'last_name'  => $validated['last_name'] ?? null,
+            'email'      => $validated['email'] ?? null,
+        ]);
+        if (!empty($userFields)) {
+            $user->update($userFields);
+        }
+
+        // Update linked member profile if exists
+        $member = $user->member;
+        if ($member) {
+            $memberFields = array_filter([
+                'first_name' => $validated['first_name'] ?? null,
+                'last_name'  => $validated['last_name'] ?? null,
+                'email'      => $validated['email'] ?? null,
+                'phone'      => $validated['phone'] ?? null,
+                'gender'     => $validated['gender'] ?? null,
+                'dob'        => $validated['dob'] ?? null,
+                'address'    => $validated['address'] ?? null,
+            ], fn($v) => !is_null($v));
+            if (!empty($memberFields)) {
+                $member->update($memberFields);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile updated successfully.',
+            'data'    => $user->fresh()->load('member', 'church'),
+        ]);
+    }
+
+    public function uploadAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120',
+        ]);
+
+        $user = $request->user();
+        $member = $user->member;
+
+        if (!$member) {
+            return response()->json(['message' => 'Member profile not found.'], 404);
+        }
+
+        // Delete old photo if exists
+        if ($member->photo) {
+            Storage::disk('public')->delete($member->photo);
+        }
+
+        $path = $request->file('avatar')->store('member-photos', 'public');
+        $member->update(['photo' => $path]);
+
+        return response()->json([
+            'success'   => true,
+            'message'   => 'Avatar updated successfully.',
+            'photo_url' => $member->fresh()->photo_url,
         ]);
     }
 }
