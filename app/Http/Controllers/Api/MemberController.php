@@ -59,6 +59,15 @@ class MemberController extends Controller implements HasMiddleware
         if ($request->hasFile('photo')) {
             $data['photo'] = $request->file('photo')->store('photos', 'public');
         }
+        if ($request->hasFile('baptism_certificate')) {
+            $data['baptism_certificate'] = $request->file('baptism_certificate')->store('certificates', 'public');
+        }
+        if ($request->hasFile('marriage_certificate')) {
+            $data['marriage_certificate'] = $request->file('marriage_certificate')->store('certificates', 'public');
+        }
+        if ($request->hasFile('birth_certificate')) {
+            $data['birth_certificate'] = $request->file('birth_certificate')->store('certificates', 'public');
+        }
 
         $member = Member::create($data);
 
@@ -91,6 +100,15 @@ class MemberController extends Controller implements HasMiddleware
 
         if ($request->hasFile('photo')) {
             $data['photo'] = $request->file('photo')->store('photos', 'public');
+        }
+        if ($request->hasFile('baptism_certificate')) {
+            $data['baptism_certificate'] = $request->file('baptism_certificate')->store('certificates', 'public');
+        }
+        if ($request->hasFile('marriage_certificate')) {
+            $data['marriage_certificate'] = $request->file('marriage_certificate')->store('certificates', 'public');
+        }
+        if ($request->hasFile('birth_certificate')) {
+            $data['birth_certificate'] = $request->file('birth_certificate')->store('certificates', 'public');
         }
 
         $member->update($data);

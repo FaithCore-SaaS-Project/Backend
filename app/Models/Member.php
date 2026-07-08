@@ -16,17 +16,43 @@ class Member extends Model
         'member_no',
         'first_name',
         'last_name',
+        'nic',
         'phone',
         'email',
         'gender',
         'dob',
         'address',
+        'address_type',
+        'permanent_address',
+        'postal_address',
+        'is_baptized',
+        'baptism_church',
+        'baptism_partner_name',
+        'baptism_certificate',
         'baptism_date',
         'membership_date',
         'occupation',
+        'marital_status',
+        'marriage_date',
+        'marriage_certificate',
+        'birth_certificate',
         'photo',
         'status'
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($member) {
+            // Sync permanent/postal address to legacy address column for backward compatibility
+            if ($member->permanent_address) {
+                $member->address = $member->permanent_address;
+            } elseif ($member->postal_address) {
+                $member->address = $member->postal_address;
+            }
+        });
+    }
 
     protected $appends = ['photo_url'];
 

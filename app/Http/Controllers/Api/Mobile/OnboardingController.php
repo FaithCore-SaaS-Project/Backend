@@ -9,6 +9,9 @@ use App\Models\User;
 use App\Models\Member;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Cache;
+use App\Mail\OtpMail;
 
 class OnboardingController extends Controller
 {
@@ -45,44 +48,69 @@ class OnboardingController extends Controller
     }
 
     /**
-     * Mock Send OTP
+     * Send OTP to Email
      */
     public function sendOtp(Request $request)
     {
         $request->validate([
-            'phone' => 'required|string'
+            'email' => 'required|email'
         ]);
 
-        // In a real scenario, integrate SMS Gateway (e.g., Twilio) here.
-        // For v1, we mock it. The OTP is hardcoded as '1234' on the client side,
-        // but we just return success.
+        // Generate a random 4-digit OTP
+        $otp = (string) mt_rand(1000, 9999);
+
+        // Store OTP in cache for 10 minutes
+        Cache::put('otp_' . $request->email, $otp, now()->addMinutes(10));
+
+        try {
+            // Send OTP email
+            Mail::to($request->email)->send(new OtpMail($otp));
+        } catch (\Exception $e) {
+            // Log error but fallback in local development if needed
+            logger()->error('Failed to send OTP email: ' . $e->getMessage());
+            
+            if (!app()->environment('local')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to send OTP email. Please try again later.'
+                ], 500);
+            }
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'OTP sent successfully to ' . $request->phone
+            'message' => 'OTP sent successfully to ' . $request->email
         ]);
     }
 
     /**
-     * Mock Verify OTP
+     * Verify OTP
      */
     public function verifyOtp(Request $request)
     {
         $request->validate([
-            'phone' => 'required|string',
+            'email' => 'required|email',
             'otp' => 'required|string'
         ]);
 
-        if ($request->otp !== '1234') {
+        $cachedOtp = Cache::get('otp_' . $request->email);
+
+        // Fallback to '1234' only in local development environment for easier testing
+        $isLocalMock = app()->environment('local') && $request->otp === '1234';
+
+        if ($cachedOtp !== $request->otp && !$isLocalMock) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid OTP. Please try again.'
             ], 400);
         }
 
+        // Clear OTP from cache on success
+        Cache::forget('otp_' . $request->email);
+
         return response()->json([
             'success' => true,
-            'message' => 'Phone verified successfully.'
+            'message' => 'Email verified successfully.'
         ]);
     }
 

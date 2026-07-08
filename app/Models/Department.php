@@ -24,4 +24,9 @@ class Department extends Model
             'department_members'
         );
     }
+
+    public function leader()
+    {
+        return $this->belongsTo(Member::class, 'leader_id');
+    }
 }
