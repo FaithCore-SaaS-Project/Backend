@@ -54,7 +54,7 @@ Route::middleware(['auth:sanctum', 'tenant'])->prefix('mobile')->group(function 
     Route::get('/user', function (Request $request) {
         return response()->json([
             'success' => true,
-            'data' => $request->user()->load(['church', 'member'])
+            'data' => $request->user()->load(['church', 'member', 'roles'])
         ]);
     });
 
