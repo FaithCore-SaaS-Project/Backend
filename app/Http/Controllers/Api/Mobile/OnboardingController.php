@@ -26,7 +26,6 @@ class OnboardingController extends Controller
 
         $church = Church::where('registration_no', $request->invite_code)
                         ->orWhere('id', $request->invite_code) // fallback for testing
-                        ->where('status', 'active')
                         ->first();
 
         if (!$church) {
@@ -34,6 +33,23 @@ class OnboardingController extends Controller
                 'success' => false,
                 'message' => 'Church not found with the provided invite code.'
             ], 404);
+        }
+
+        // 1. Check if the church/invite code is active
+        if ($church->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This invite code is inactive or has been revoked.'
+            ], 403);
+        }
+
+        // 2. Check if the church subscription is active
+        $subscription = \App\Models\Subscription::where('church_id', $church->id)->latest()->first();
+        if (!$subscription || in_array($subscription->status, ['expired', 'cancelled']) || now()->gt($subscription->end_date)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This church\'s FaithCore subscription has expired. Please contact the administrator.'
+            ], 403);
         }
 
         return response()->json([

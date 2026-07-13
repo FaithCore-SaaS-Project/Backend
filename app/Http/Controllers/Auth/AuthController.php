@@ -35,10 +35,25 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        // Get subscription status
+        $subscription = \App\Models\Subscription::where('church_id', $user->church_id)->latest()->first();
+        $subscriptionStatus = 'none';
+        if ($subscription) {
+            if (in_array($subscription->status, ['expired', 'cancelled']) || now()->gt($subscription->end_date)) {
+                $subscriptionStatus = 'expired';
+                if ($subscription->status !== 'expired') {
+                    $subscription->update(['status' => 'expired']);
+                }
+            } else {
+                $subscriptionStatus = 'active';
+            }
+        }
+
         return response()->json([
             'token' => $token,
             'user' => $user,
             'church' => $user->church,
+            'subscription_status' => $subscriptionStatus,
             'roles' => $user->getRoleNames(),
             'permissions' => $user->getAllPermissions()->pluck('name'),
         ]);
