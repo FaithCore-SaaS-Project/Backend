@@ -34,6 +34,17 @@ class DepartmentController extends Controller implements HasMiddleware
      */
     public function store(Request $request)
     {
+        $church = $request->user()->church;
+        $plan = $church ? $church->activePlan() : null;
+        if ($plan) {
+            $deptCount = Department::count();
+            if ($deptCount >= $plan->department_limit) {
+                return response()->json([
+                    'message' => 'Your plan (' . $plan->name . ') allows up to ' . $plan->department_limit . ' departments. Please upgrade your subscription.'
+                ], 403);
+            }
+        }
+
         $validated = $request->validate([
             'department_name' => 'required|string|max:255',
             'leader_id' => 'nullable|exists:members,id',

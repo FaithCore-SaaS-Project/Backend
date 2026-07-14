@@ -41,4 +41,18 @@ class Church extends Model
     {
         return $this->hasMany(Event::class);
     }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function activePlan()
+    {
+        $sub = $this->subscriptions()->latest()->first();
+        if ($sub && in_array($sub->status, ['active', 'trialing']) && $sub->end_date >= date('Y-m-d')) {
+            return $sub->plan;
+        }
+        return null;
+    }
 }

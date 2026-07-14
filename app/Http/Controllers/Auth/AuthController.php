@@ -38,6 +38,7 @@ class AuthController extends Controller
         // Get subscription status
         $subscription = \App\Models\Subscription::where('church_id', $user->church_id)->latest()->first();
         $subscriptionStatus = 'none';
+        $activePlan = null;
         if ($subscription) {
             if (in_array($subscription->status, ['expired', 'cancelled']) || now()->gt($subscription->end_date)) {
                 $subscriptionStatus = 'expired';
@@ -46,6 +47,7 @@ class AuthController extends Controller
                 }
             } else {
                 $subscriptionStatus = 'active';
+                $activePlan = $subscription->plan;
             }
         }
 
@@ -54,6 +56,7 @@ class AuthController extends Controller
             'user' => $user,
             'church' => $user->church,
             'subscription_status' => $subscriptionStatus,
+            'plan' => $activePlan,
             'roles' => $user->getRoleNames(),
             'permissions' => $user->getAllPermissions()->pluck('name'),
         ]);
@@ -69,11 +72,26 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         $user = $request->user()->load('church');
+        $activePlan = $user->church ? $user->church->activePlan() : null;
+        $subscriptionStatus = 'none';
+        if ($user->church) {
+            $subscription = \App\Models\Subscription::where('church_id', $user->church_id)->latest()->first();
+            if ($subscription) {
+                if (in_array($subscription->status, ['expired', 'cancelled']) || now()->gt($subscription->end_date)) {
+                    $subscriptionStatus = 'expired';
+                } else {
+                    $subscriptionStatus = 'active';
+                }
+            }
+        }
+
         return response()->json([
             'id' => $user->id,
             'name' => $user->first_name . ' ' . $user->last_name,
             'role' => $user->getRoleNames()->first(),
             'church' => $user->church ? $user->church->church_name : null,
+            'subscription_status' => $subscriptionStatus,
+            'plan' => $activePlan,
             'permissions' => $user->getAllPermissions()->pluck('name'),
         ]);
     }

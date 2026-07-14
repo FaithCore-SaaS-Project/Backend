@@ -41,6 +41,17 @@ class MemberController extends Controller implements HasMiddleware
      */
     public function store(StoreMemberRequest $request)
     {
+        $church = $request->user()->church;
+        $plan = $church ? $church->activePlan() : null;
+        if ($plan) {
+            $memberCount = Member::count();
+            if ($memberCount >= $plan->member_limit) {
+                return response()->json([
+                    'message' => 'Your plan (' . $plan->name . ') allows up to ' . $plan->member_limit . ' members. Please upgrade your subscription.'
+                ], 403);
+            }
+        }
+
         // Auto-generate a unique member number for this church
         $lastMember = Member::orderBy('id', 'desc')->first();
         $nextNumber = $lastMember ? ((int) filter_var($lastMember->member_no, FILTER_SANITIZE_NUMBER_INT)) + 1 : 1001;

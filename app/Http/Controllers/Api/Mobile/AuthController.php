@@ -119,4 +119,20 @@ class AuthController extends Controller
             'photo_url' => $member->fresh()->photo_url,
         ]);
     }
+
+    public function savePushToken(Request $request)
+    {
+        $request->validate([
+            'push_token' => 'required|string',
+        ]);
+
+        $request->user()->update([
+            'push_token' => $request->push_token
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Push token saved successfully.'
+        ]);
+    }
 }

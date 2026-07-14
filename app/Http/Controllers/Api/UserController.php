@@ -28,6 +28,17 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $church = $request->user()->church;
+        $plan = $church ? $church->activePlan() : null;
+        if ($plan) {
+            $userCount = User::where('church_id', auth()->user()->church_id)->count();
+            if ($userCount >= $plan->user_limit) {
+                return response()->json([
+                    'message' => 'Your plan (' . $plan->name . ') allows up to ' . $plan->user_limit . ' admin users. Please upgrade your subscription.'
+                ], 403);
+            }
+        }
+
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',

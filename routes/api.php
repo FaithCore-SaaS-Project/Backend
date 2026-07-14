@@ -46,13 +46,16 @@ Route::prefix('super-admin')->group(function () {
 // Mobile Onboarding APIs (Unprotected)
 Route::prefix('mobile/onboarding')->group(function () {
     Route::post('/find-church', [\App\Http\Controllers\Api\Mobile\OnboardingController::class, 'findChurch']);
-    Route::post('/send-otp', [\App\Http\Controllers\Api\Mobile\OnboardingController::class, 'sendOtp']);
-    Route::post('/verify-otp', [\App\Http\Controllers\Api\Mobile\OnboardingController::class, 'verifyOtp']);
     Route::post('/register', [\App\Http\Controllers\Api\Mobile\OnboardingController::class, 'register']);
 });
 
-// Protected Mobile APIs
-Route::middleware(['auth:sanctum', 'tenant'])->prefix('mobile')->group(function () {
+Route::prefix('mobile/onboarding')->middleware('throttle:otp')->group(function () {
+    Route::post('/send-otp', [\App\Http\Controllers\Api\Mobile\OnboardingController::class, 'sendOtp']);
+    Route::post('/verify-otp', [\App\Http\Controllers\Api\Mobile\OnboardingController::class, 'verifyOtp']);
+});
+
+// Protected Mobile APIs (Strict Subscription Access)
+Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->prefix('mobile')->group(function () {
     Route::post('/logout', [WebAuthController::class, 'logout']);
     Route::get('/me', [WebAuthController::class, 'me']);
     
@@ -71,24 +74,27 @@ Route::middleware(['auth:sanctum', 'tenant'])->prefix('mobile')->group(function 
     Route::apiResource('prayer-requests', \App\Http\Controllers\Api\Mobile\PrayerRequestController::class);
     Route::apiResource('announcements', \App\Http\Controllers\Api\Mobile\AnnouncementController::class);
     Route::apiResource('events', \App\Http\Controllers\Api\Mobile\EventController::class);
-    Route::post('/give', [\App\Http\Controllers\Api\Mobile\FinanceController::class, 'storeDonation']);
+    
+    // Gated Mobile Giving
+    Route::post('/give', [\App\Http\Controllers\Api\Mobile\FinanceController::class, 'storeDonation'])->middleware('feature:mobile.giving');
+    Route::get('/giving/history', [\App\Http\Controllers\Api\Mobile\FinanceController::class, 'givingHistory'])->middleware('feature:mobile.giving');
 
     // Finance Categories
     Route::get('/finance-categories', [\App\Http\Controllers\Api\Mobile\FinanceController::class, 'getCategories']);
 
-    // Giving History
-    Route::get('/giving/history', [\App\Http\Controllers\Api\Mobile\FinanceController::class, 'givingHistory']);
-
-    // Event Registration
-    Route::post('/events/{id}/register', [\App\Http\Controllers\Api\Mobile\EventController::class, 'register']);
+    // Gated Event Registration
+    Route::post('/events/{id}/register', [\App\Http\Controllers\Api\Mobile\EventController::class, 'register'])->middleware('feature:mobile.event_registration');
 
     // Profile Management
     Route::post('/user/update', [\App\Http\Controllers\Api\Mobile\AuthController::class, 'updateProfile']);
     Route::post('/user/avatar', [\App\Http\Controllers\Api\Mobile\AuthController::class, 'uploadAvatar']);
+    Route::post('/user/push-token', [\App\Http\Controllers\Api\Mobile\AuthController::class, 'savePushToken'])->middleware('feature:mobile.push_notifications');
 
-    // Family Management
-    Route::get('/family', [\App\Http\Controllers\Api\Mobile\FamilyController::class, 'myFamily']);
-    Route::post('/family/members', [\App\Http\Controllers\Api\Mobile\FamilyController::class, 'addMember']);
+    // Gated Family Management
+    Route::middleware('feature:mobile.family')->group(function () {
+        Route::get('/family', [\App\Http\Controllers\Api\Mobile\FamilyController::class, 'myFamily']);
+        Route::post('/family/members', [\App\Http\Controllers\Api\Mobile\FamilyController::class, 'addMember']);
+    });
 });
 
 // Protected Web SaaS APIs (Basic Tenant Access)
@@ -112,14 +118,16 @@ Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->group(function ()
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
     
     // Core Modules
-    Route::post('/members/import', [MemberController::class, 'import']);
+    Route::post('/members/import', [MemberController::class, 'import'])->middleware('feature:members.bulk_import');
     Route::apiResource('members', MemberController::class);
     Route::apiResource('families', FamilyController::class);
     Route::apiResource('departments', DepartmentController::class);
+    
+    // Events & Attendance
     Route::apiResource('events', EventController::class);
     Route::post('/events/register', [EventController::class, 'register']);
-    Route::get('/events/{id}/attendance', [EventController::class, 'getAttendance']);
-    Route::post('/events/{id}/attendance', [EventController::class, 'markAttendance']);
+    Route::get('/events/{id}/attendance', [EventController::class, 'getAttendance'])->middleware('feature:events.attendance');
+    Route::post('/events/{id}/attendance', [EventController::class, 'markAttendance'])->middleware('feature:events.attendance');
     
     // Finance Routes
     Route::get('/finance/records', [FinanceController::class, 'recordsIndex']);
@@ -136,29 +144,47 @@ Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->group(function ()
     Route::put('/finance-categories/{id}', [FinanceController::class, 'categoriesUpdate']);
     Route::delete('/finance-categories/{id}', [FinanceController::class, 'categoriesDestroy']);
 
-    Route::get('/bank-accounts', [FinanceController::class, 'bankAccountsIndex']);
-    Route::post('/bank-accounts', [FinanceController::class, 'bankAccountsStore']);
-    Route::put('/bank-accounts/{id}', [FinanceController::class, 'bankAccountsUpdate']);
-    Route::delete('/bank-accounts/{id}', [FinanceController::class, 'bankAccountsDestroy']);
+    // Gated Finance: Bank Accounts
+    Route::middleware('feature:finance.bank_accounts')->group(function () {
+        Route::get('/bank-accounts', [FinanceController::class, 'bankAccountsIndex']);
+        Route::post('/bank-accounts', [FinanceController::class, 'bankAccountsStore']);
+        Route::put('/bank-accounts/{id}', [FinanceController::class, 'bankAccountsUpdate']);
+        Route::delete('/bank-accounts/{id}', [FinanceController::class, 'bankAccountsDestroy']);
+    });
 
-    Route::get('/budgets', [FinanceController::class, 'budgetIndex']);
-    Route::post('/budgets', [FinanceController::class, 'budgetStore']);
-    Route::put('/budgets/{id}', [FinanceController::class, 'budgetUpdate']);
-    Route::delete('/budgets/{id}', [FinanceController::class, 'budgetDestroy']);
+    // Gated Finance: Budgets
+    Route::middleware('feature:finance.budgets')->group(function () {
+        Route::get('/budgets', [FinanceController::class, 'budgetIndex']);
+        Route::post('/budgets', [FinanceController::class, 'budgetStore']);
+        Route::put('/budgets/{id}', [FinanceController::class, 'budgetUpdate']);
+        Route::delete('/budgets/{id}', [FinanceController::class, 'budgetDestroy']);
+    });
 
-    // Documents & Certificates
+    // Documents (storage_limit checked inside controller upload method)
     Route::apiResource('documents', DocumentController::class);
     Route::post('/documents/upload', [DocumentController::class, 'upload']);
-    Route::apiResource('certificates', CertificateController::class);
-    Route::get('/certificates/{id}/pdf', [CertificateController::class, 'generatePdf']);
-    Route::get('/certificates/{id}/verify', [CertificateController::class, 'verify']);
-    Route::apiResource('letters', LetterController::class);
-    Route::get('/letters/{id}/pdf', [LetterController::class, 'generatePdf']);
+    
+    // Certificates
+    Route::middleware('feature:certificates.enabled')->group(function () {
+        Route::apiResource('certificates', CertificateController::class);
+        Route::get('/certificates/{id}/pdf', [CertificateController::class, 'generatePdf']);
+        Route::get('/certificates/{id}/verify', [CertificateController::class, 'verify']);
+    });
 
-    // Users, Roles & Permissions
+    // Letters
+    Route::middleware('feature:letters.enabled')->group(function () {
+        Route::apiResource('letters', LetterController::class);
+        Route::get('/letters/{id}/pdf', [LetterController::class, 'generatePdf']);
+    });
+
+    // Users & Roles
     Route::apiResource('users', UserController::class);
-    Route::apiResource('roles', RoleController::class);
-    Route::apiResource('permissions', PermissionController::class);
+    
+    // Roles & Custom Permissions
+    Route::middleware('feature:roles.custom_roles')->group(function () {
+        Route::apiResource('roles', RoleController::class);
+        Route::apiResource('permissions', PermissionController::class);
+    });
 
     // Settings & Notifications
     Route::apiResource('settings', SettingsController::class);
@@ -167,10 +193,12 @@ Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->group(function ()
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
 
     // Reports
-    Route::get('/reports/saved', [ReportController::class, 'getSavedReports']);
-    Route::post('/reports/saved', [ReportController::class, 'storeSavedReport']);
-    Route::delete('/reports/saved/{id}', [ReportController::class, 'deleteSavedReport']);
-    Route::get('/reports/financial', [ReportController::class, 'financial']);
-    Route::get('/reports/members', [ReportController::class, 'members']);
-    Route::get('/reports/attendance', [ReportController::class, 'attendance']);
+    Route::middleware('feature:reports.enabled')->group(function () {
+        Route::get('/reports/saved', [ReportController::class, 'getSavedReports']);
+        Route::post('/reports/saved', [ReportController::class, 'storeSavedReport']);
+        Route::delete('/reports/saved/{id}', [ReportController::class, 'deleteSavedReport']);
+        Route::get('/reports/financial', [ReportController::class, 'financial']);
+        Route::get('/reports/members', [ReportController::class, 'members']);
+        Route::get('/reports/attendance', [ReportController::class, 'attendance']);
+    });
 });

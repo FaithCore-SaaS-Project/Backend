@@ -53,7 +53,34 @@ class DocumentController extends Controller implements HasMiddleware
             'file' => 'required|file|max:20480' // max 20MB
         ]);
 
-        $churchId = $request->user()->church_id;
+        $user = $request->user();
+        $churchId = $user->church_id;
+        $church = $user->church;
+        $plan = $church ? $church->activePlan() : null;
+
+        if ($plan) {
+            // Calculate existing storage usage (bytes)
+            $totalSize = 0;
+            $disk = \Illuminate\Support\Facades\Storage::disk('public');
+            $files = $disk->allFiles("churches/{$churchId}");
+            foreach ($files as $file) {
+                try {
+                    $totalSize += $disk->size($file);
+                } catch (\Exception $e) {
+                    // Ignore errors
+                }
+            }
+
+            $newFileSize = $request->file('file')->getSize();
+            $totalSizeMb = ($totalSize + $newFileSize) / (1024 * 1024);
+
+            if ($totalSizeMb > $plan->storage_limit_mb) {
+                return response()->json([
+                    'message' => 'Storage limit reached. Your plan (' . $plan->name . ') allows up to ' . $plan->storage_limit_mb . ' MB. Please upgrade.'
+                ], 403);
+            }
+        }
+
         $path = $request->file('file')->store("churches/{$churchId}/documents", 'public');
 
         return response()->json(['file_path' => $path]);
