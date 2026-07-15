@@ -30,7 +30,8 @@ class WebhookController extends Controller
             
             if ($event['type'] === 'checkout.session.completed') {
                 $session = $event['data']['object'];
-                $this->processPayment($session['client_reference_id'], 'stripe', $session['amount_total'] / 100, $session['id'], $payload);
+                $currency = strtoupper($session['currency'] ?? 'USD');
+                $this->processPayment($session['client_reference_id'], 'stripe', $session['amount_total'] / 100, $session['id'], $payload, $currency);
             }
 
             return response()->json(['status' => 'success']);
@@ -61,7 +62,7 @@ class WebhookController extends Controller
         }
 
         if ($statusCode == 2) { // 2 = Success
-            $this->processPayment($orderId, 'payhere', $payhereAmount, $request->input('payment_id'), json_encode($request->all()));
+            $this->processPayment($orderId, 'payhere', $payhereAmount, $request->input('payment_id'), json_encode($request->all()), $payhereCurrency);
         }
 
         return response()->json(['status' => 'success']);
@@ -89,17 +90,18 @@ class WebhookController extends Controller
             $amount = $resource['amount']['value'] ?? 0;
 
             if ($subscriptionId) {
-                $this->processPayment($subscriptionId, 'paypal', $amount, $transactionId, $payload);
+                $currency = $resource['amount']['currency_code'] ?? 'USD';
+                $this->processPayment($subscriptionId, 'paypal', $amount, $transactionId, $payload, $currency);
             }
         }
 
         return response()->json(['status' => 'success']);
     }
 
-    private function processPayment($subscriptionId, $gateway, $amount, $transactionId, $payload)
+    private function processPayment($subscriptionId, $gateway, $amount, $transactionId, $payload, $currency = 'USD')
     {
         // Prevent race conditions and duplicates using a database transaction with a pessimistic lock
-        DB::transaction(function () use ($subscriptionId, $gateway, $amount, $transactionId, $payload) {
+        DB::transaction(function () use ($subscriptionId, $gateway, $amount, $transactionId, $payload, $currency) {
             
             // Idempotency check
             if (Payment::where('transaction_id', $transactionId)->exists()) {
@@ -113,7 +115,7 @@ class WebhookController extends Controller
                 'subscription_id' => $subscription->id,
                 'plan_id' => $subscription->plan_id,
                 'amount' => $amount,
-                'currency' => 'USD',
+                'currency' => $currency,
                 'gateway' => $gateway,
                 'transaction_id' => $transactionId,
                 'payment_date' => Carbon::now(),
