@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'contact@beracah.org'],
             [
                 'church_name' => 'Beracah Christian Ministry',
+                'registration_no' => 'FC-123456',
                 'pastor_name' => 'Pastor John',
                 'email' => 'contact@beracah.org',
                 'phone' => '+94 77 123 4567',

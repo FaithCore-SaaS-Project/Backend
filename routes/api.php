@@ -25,6 +25,8 @@ use App\Http\Controllers\Api\WebhookController;
 
 // Web SaaS Authentication APIs
 Route::post('/login', [WebAuthController::class, 'login']);
+Route::post('/register', [WebAuthController::class, 'register']);
+Route::post('/activate', [WebAuthController::class, 'activate']);
 
 // Mobile Authentication APIs
 Route::post('/mobile/login', [WebAuthController::class, 'login']);
