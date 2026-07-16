@@ -145,6 +145,22 @@ class WebhookController extends Controller
                 'start_date' => Carbon::now(),
                 'end_date' => Carbon::now()->addYear(),
             ]);
+
+            $church = $subscription->church;
+            $user = $church ? $church->users()->first() : null;
+            $plan = $subscription->plan;
+            if ($user && $church && $plan) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\WelcomeMail(
+                        $user->first_name . ' ' . $user->last_name,
+                        $church->church_name,
+                        $church->registration_no,
+                        $plan->name
+                    ));
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Failed to send payment welcome email: ' . $e->getMessage());
+                }
+            }
         });
     }
 

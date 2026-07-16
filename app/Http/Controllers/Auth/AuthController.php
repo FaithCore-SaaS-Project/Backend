@@ -294,6 +294,17 @@ class AuthController extends Controller
                 'amount' => $plan->price,
                 'status' => 'active'
             ]);
+
+            try {
+                \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\WelcomeMail(
+                    $user->first_name . ' ' . $user->last_name,
+                    $church->church_name,
+                    $church->registration_no,
+                    $plan->name
+                ));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to send welcome email: ' . $e->getMessage());
+            }
         }
 
         // Generate Auth Token
