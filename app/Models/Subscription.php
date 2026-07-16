@@ -10,7 +10,15 @@ class Subscription extends Model
 {
     use BelongsToChurch;
 
-    //
+    protected $fillable = [
+        'church_id',
+        'plan_id',
+        'status',
+        'start_date',
+        'end_date',
+        'amount',
+        'billing_cycle'
+    ];
 
     public function plan() { return $this->belongsTo(Plan::class); }
 }
