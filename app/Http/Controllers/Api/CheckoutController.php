@@ -25,11 +25,19 @@ class CheckoutController extends Controller
 
         // Fetch or create a pending subscription to attach to the custom_id
         $subscription = Subscription::firstOrCreate(
-            ['church_id' => $church->id, 'status' => 'pending'],
-            ['plan_id' => $plan->id, 'start_date' => now(), 'end_date' => now()->addMonth()]
+            ['church_id' => $church->id, 'status' => 'expired'],
+            [
+                'plan_id' => $plan->id,
+                'amount' => $plan->price,
+                'start_date' => now(),
+                'end_date' => now()->addMonth()
+            ]
         );
 
-        $subscription->update(['plan_id' => $plan->id]);
+        $subscription->update([
+            'plan_id' => $plan->id,
+            'amount' => $plan->price
+        ]);
 
         $provider = new PayPalClient;
         $provider->setApiCredentials(config('paypal'));
@@ -77,7 +85,7 @@ class CheckoutController extends Controller
 
         // Fetch or create a pending subscription
         $subscription = Subscription::firstOrCreate(
-            ['church_id' => $church->id, 'status' => 'pending'],
+            ['church_id' => $church->id, 'status' => 'expired'],
             [
                 'plan_id' => $plan->id,
                 'amount' => $plan->price,
