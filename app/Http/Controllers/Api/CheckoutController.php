@@ -76,35 +76,40 @@ class CheckoutController extends Controller
     {
         $request->validate([
             'plan_name' => 'required|string',
+            'is_annual' => 'nullable|boolean',
             'success_url' => 'required|url',
             'cancel_url' => 'required|url',
         ]);
 
+        $isAnnual = $request->input('is_annual', false);
         $church = $request->user()->church;
         $plan = Plan::where('name', $request->plan_name)->firstOrFail();
+
+        $rawPrice = $isAnnual ? ($plan->price * 12 * 0.9) : $plan->price;
+        $endDate = $isAnnual ? now()->addYear() : now()->addMonth();
 
         // Fetch or create a pending subscription
         $subscription = Subscription::firstOrCreate(
             ['church_id' => $church->id, 'status' => 'expired'],
             [
                 'plan_id' => $plan->id,
-                'amount' => $plan->price,
+                'amount' => $rawPrice,
                 'start_date' => now(),
-                'end_date' => now()->addMonth()
+                'end_date' => $endDate
             ]
         );
 
         $subscription->update([
             'plan_id' => $plan->id,
-            'amount' => $plan->price
+            'amount' => $rawPrice,
+            'end_date' => $endDate
         ]);
 
         $merchantId = env('PAYHERE_MERCHANT_ID');
         $merchantSecret = env('PAYHERE_SECRET');
         $currency = 'LKR';
-        // In this implementation, the plan price in DB is assumed to be in LKR or USD, adjust accordingly.
-        // For PayHere local, we will use LKR, but let's just use the plan's raw price.
-        $amount = number_format($plan->price, 2, '.', '');
+        
+        $amount = number_format($rawPrice, 2, '.', '');
         $orderId = (string)$subscription->id;
 
         // Generate the PayHere Hash
@@ -119,6 +124,8 @@ class CheckoutController extends Controller
             'items' => 'FaithCore ' . $plan->name . ' Plan',
             'currency' => $currency,
             'amount' => $amount,
+            'recurrence' => $isAnnual ? '1 Year' : '1 Month',
+            'duration' => 'Forever',
             'first_name' => $request->user()->name,
             'last_name' => '',
             'email' => $request->user()->email,
@@ -127,7 +134,7 @@ class CheckoutController extends Controller
             'city' => 'Colombo',
             'country' => 'Sri Lanka',
             'hash' => $hash,
-            'payhere_url' => env('PAYHERE_ENV', 'sandbox') === 'live' ? 'https://www.payhere.lk/pay/checkout' : 'https://sandbox.payhere.lk/pay/checkout'
+            'payhere_url' => env('PAYHERE_ENV', 'sandbox') === 'live' ? 'https://www.payhere.lk/pay/recurring' : 'https://sandbox.payhere.lk/pay/recurring'
         ]);
     }
 }

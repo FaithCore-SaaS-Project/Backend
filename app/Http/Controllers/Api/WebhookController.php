@@ -63,6 +63,8 @@ class WebhookController extends Controller
 
         if ($statusCode == 2) { // 2 = Success
             $this->processPayment($orderId, 'payhere', $payhereAmount, $request->input('payment_id'), json_encode($request->all()), $payhereCurrency);
+        } else if ($statusCode == -1 || $statusCode == -2 || $statusCode == -3) {
+            $this->handleFailedPayment($orderId, 'payhere', json_encode($request->all()));
         }
 
         return response()->json(['status' => 'success']);
@@ -139,11 +141,15 @@ class WebhookController extends Controller
                 'invoice_date' => Carbon::now(),
             ]);
 
+            $planPrice = $subscription->plan->price;
+            $isAnnual = ($planPrice > 0 && $amount >= $planPrice * 10);
+            $endDate = $isAnnual ? Carbon::now()->addYear() : Carbon::now()->addMonth();
+
             $subscription->update([
                 'status' => 'active',
                 'amount' => $amount,
                 'start_date' => Carbon::now(),
-                'end_date' => Carbon::now()->addYear(),
+                'end_date' => $endDate,
             ]);
 
             $church = $subscription->church;
@@ -167,5 +173,39 @@ class WebhookController extends Controller
     private function verifyStripeSignature($payload, $sigHeader, $secret)
     {
         return !empty($sigHeader) && !empty($secret);
+    }
+
+    private function handleFailedPayment($subscriptionId, $gateway, $payload)
+    {
+        DB::transaction(function () use ($subscriptionId, $gateway, $payload) {
+            $subscription = Subscription::find($subscriptionId);
+            if (!$subscription) {
+                Log::warning("Failed payment webhook: Subscription not found for ID: " . $subscriptionId);
+                return;
+            }
+
+            // Update subscription to expired
+            $subscription->update([
+                'status' => 'expired'
+            ]);
+
+            Log::warning("Subscription {$subscriptionId} suspended due to failed billing via {$gateway}.");
+
+            // Retrieve admin details
+            $church = $subscription->church;
+            $user = $church ? $church->users()->first() : null;
+
+            if ($user && $church) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\SubscriptionExpiredMail(
+                        $user->first_name . ' ' . $user->last_name,
+                        $church->church_name,
+                        $church->registration_no
+                    ));
+                } catch (\Exception $e) {
+                    Log::error('Failed to send subscription expired email: ' . $e->getMessage());
+                }
+            }
+        });
     }
 }
