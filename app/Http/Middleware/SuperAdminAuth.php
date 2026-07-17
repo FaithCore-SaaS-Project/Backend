@@ -15,6 +15,10 @@ class SuperAdminAuth
      */
     public function handle(Request $request, Closure $next): Response
     {
+        if ($request->isMethod('OPTIONS')) {
+            return $next($request);
+        }
+
         $token = $request->header('X-Super-Admin-Token');
         $expectedToken = env('SUPER_ADMIN_TOKEN', 'Admin@FaithCore');
 
