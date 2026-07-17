@@ -37,7 +37,7 @@ Route::post('/webhooks/payhere', [WebhookController::class, 'payhere']);
 Route::post('/webhooks/paypal', [WebhookController::class, 'paypal']);
 
 // Super Admin Platform Management APIs (Company Side)
-Route::prefix('super-admin')->group(function () {
+Route::prefix('super-admin')->middleware('super_admin')->group(function () {
     Route::get('/analytics', [\App\Http\Controllers\Api\SuperAdminController::class, 'analytics']);
     Route::get('/churches', [\App\Http\Controllers\Api\SuperAdminController::class, 'churches']);
     Route::get('/subscriptions', [\App\Http\Controllers\Api\SuperAdminController::class, 'subscriptions']);
