@@ -37,7 +37,7 @@ class SuperAdminController extends Controller
      */
     public function churches()
     {
-        $churches = Church::withCount(['users', 'members'])->get();
+        $churches = Church::with(['subscriptions.plan'])->withCount(['users', 'members'])->get();
         return response()->json($churches);
     }
 
@@ -55,7 +55,7 @@ class SuperAdminController extends Controller
      */
     public function payments()
     {
-        $payments = Payment::with('church')->latest()->get();
+        $payments = Payment::with(['church', 'plan'])->latest()->get();
         return response()->json($payments);
     }
 
