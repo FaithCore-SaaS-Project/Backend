@@ -19,7 +19,7 @@ use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\FinanceController;
 use App\Http\Controllers\Api\ReportController;
-
+use App\Http\Controllers\Api\SmsController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\WebhookController;
 
@@ -43,6 +43,7 @@ Route::prefix('super-admin')->middleware('super_admin')->group(function () {
     Route::get('/subscriptions', [\App\Http\Controllers\Api\SuperAdminController::class, 'subscriptions']);
     Route::get('/payments', [\App\Http\Controllers\Api\SuperAdminController::class, 'payments']);
     Route::post('/churches/{id}/toggle-status', [\App\Http\Controllers\Api\SuperAdminController::class, 'toggleChurchStatus']);
+    Route::post('/churches/{id}/sms-settings', [\App\Http\Controllers\Api\SuperAdminController::class, 'updateSmsSettings']);
 });
 
 // Mobile Onboarding APIs (Unprotected)
@@ -193,6 +194,11 @@ Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->group(function ()
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/send', [NotificationController::class, 'send']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+
+    // SMS Gateway & Wallet
+    Route::get('/sms/dashboard', [SmsController::class, 'getDashboard']);
+    Route::post('/sms/send', [SmsController::class, 'sendSms']);
+    Route::post('/sms/topup', [SmsController::class, 'buyTopup']);
 
     // Reports
     Route::middleware('feature:reports.enabled')->group(function () {

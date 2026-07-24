@@ -73,4 +73,32 @@ class SuperAdminController extends Controller
             'church' => $church
         ]);
     }
+
+    /**
+     * Update Church SMS Settings (Sender ID and manually add Top-up Balance)
+     */
+    public function updateSmsSettings(Request $request, $id)
+    {
+        $request->validate([
+            'sender_id' => 'nullable|string|max:15',
+            'add_topup' => 'nullable|integer'
+        ]);
+
+        $church = Church::findOrFail($id);
+        
+        if ($request->has('sender_id')) {
+            $church->sms_sender_id = $request->sender_id;
+        }
+
+        if ($request->has('add_topup') && $request->add_topup > 0) {
+            $church->topup_sms_balance += $request->add_topup;
+        }
+
+        $church->save();
+
+        return response()->json([
+            'message' => 'SMS Settings updated successfully',
+            'church' => $church
+        ]);
+    }
 }

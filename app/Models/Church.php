@@ -19,7 +19,10 @@ class Church extends Model
         'city',
         'country',
         'logo',
-        'status'
+        'status',
+        'monthly_sms_used',
+        'topup_sms_balance',
+        'sms_sender_id'
     ];
 
     public function users()
