@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'smslenz' => [
+        'api_url' => env('SMSLENZ_API_URL', 'https://smslenz.lk/api'),
+        'user_id' => env('SMSLENZ_USER_ID', '2183'),
+        'api_key' => env('SMSLENZ_API_KEY', '648d3581-b426-476a-acef-278f0aae4ee2'),
+        'sender_id' => env('SMSLENZ_SENDER_ID', 'FaithCore'),
+    ],
+
 ];

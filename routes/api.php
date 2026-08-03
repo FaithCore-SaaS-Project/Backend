@@ -122,6 +122,7 @@ Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->group(function ()
     
     // Core Modules
     Route::post('/members/import', [MemberController::class, 'import'])->middleware('feature:members.bulk_import');
+    Route::get('/members/export', [MemberController::class, 'export']);
     Route::apiResource('members', MemberController::class);
     Route::apiResource('families', FamilyController::class);
     Route::apiResource('departments', DepartmentController::class);

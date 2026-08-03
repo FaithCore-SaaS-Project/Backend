@@ -48,14 +48,49 @@ class NotificationController extends Controller
         ]);
 
         $members = Member::whereIn('id', $validated['member_ids'])->get();
+        $noPhoneNumbers = [];
+        $smsSent = 0;
 
-        // In a real app, you might want to use Notification::send() with a queue.
-        Notification::send($members, new MemberAnnouncement(
-            $validated['subject'],
-            $validated['message'],
-            $validated['channels']
-        ));
+        // Process SMS manually through SmsService if requested
+        if (in_array('sms', $validated['channels'])) {
+            $validPhoneMembers = $members->filter(fn($m) => !empty($m->phone));
+            $noPhoneNumbers = $members->filter(fn($m) => empty($m->phone))
+                                      ->map(fn($m) => trim($m->first_name . ' ' . $m->last_name))
+                                      ->values()
+                                      ->toArray();
 
-        return response()->json(['message' => 'Notifications sent successfully to ' . $members->count() . ' members.']);
+            $phoneNumbers = $validPhoneMembers->pluck('phone')->toArray();
+            
+            if (count($phoneNumbers) > 0) {
+                try {
+                    $church = $request->user()->church;
+                    app(\App\Services\SmsService::class)->sendBulkSms($church, $phoneNumbers, $validated['message']);
+                    $smsSent = count($phoneNumbers);
+                } catch (\Exception $e) {
+                    return response()->json([
+                        'message' => 'Failed to send SMS: ' . $e->getMessage()
+                    ], 400);
+                }
+            }
+
+            // Remove 'sms' channel before passing to standard Notification facade
+            $validated['channels'] = array_values(array_filter($validated['channels'], fn($c) => $c !== 'sms'));
+        }
+
+        // Send other channels (database, mail) if any remain
+        if (count($validated['channels']) > 0) {
+            Notification::send($members, new MemberAnnouncement(
+                $validated['subject'],
+                $validated['message'],
+                $validated['channels']
+            ));
+        }
+
+        return response()->json([
+            'message' => 'Notifications sent successfully.',
+            'total_members' => $members->count(),
+            'sms_sent' => $smsSent,
+            'no_phone_numbers' => $noPhoneNumbers
+        ]);
     }
 }
