@@ -58,7 +58,7 @@ Route::prefix('mobile/onboarding')->middleware('throttle:otp')->group(function (
 });
 
 // Protected Mobile APIs (Strict Subscription Access)
-Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->prefix('mobile')->group(function () {
+Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->prefix('mobile')->name('mobile.')->group(function () {
     Route::post('/logout', [WebAuthController::class, 'logout']);
     Route::get('/me', [WebAuthController::class, 'me']);
     
