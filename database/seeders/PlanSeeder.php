@@ -11,9 +11,9 @@ class PlanSeeder extends Seeder
     public function run(): void
     {
         // Truncate existing plans
-        DB::statement('PRAGMA foreign_keys = OFF;');
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
         Plan::truncate();
-        DB::statement('PRAGMA foreign_keys = ON;');
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
 
         $plans = [
             [
