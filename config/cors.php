@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://faithcore.org', 'http://localhost:3000', 'http://localhost:3080'],
+    'allowed_origins' => ['https://faithcore.org', 'https://admin.faithcore.org', 'http://localhost:3000', 'http://localhost:3080'],
 
     'allowed_origins_patterns' => [],
 
