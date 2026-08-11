@@ -22,7 +22,23 @@ class Church extends Model
         'status',
         'monthly_sms_used',
         'topup_sms_balance',
-        'sms_sender_id'
+        'sms_sender_id',
+        'cover_image',
+        'about',
+        'year_established',
+        'website',
+        'facebook',
+        'instagram',
+        'youtube',
+        'twitter',
+        'visibility_settings',
+        'currency',
+        'timezone',
+        'date_format'
+    ];
+
+    protected $casts = [
+        'visibility_settings' => 'array',
     ];
 
     public function users()
@@ -43,6 +59,11 @@ class Church extends Model
     public function events()
     {
         return $this->hasMany(Event::class);
+    }
+
+    public function services()
+    {
+        return $this->hasMany(ChurchService::class);
     }
 
     public function subscriptions()

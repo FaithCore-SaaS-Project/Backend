@@ -13,35 +13,49 @@ class ChurchController extends Controller
     public function details(Request $request)
     {
         $churchId = $request->user()->church_id;
-        $church = Church::find($churchId);
+        $church = Church::with('services')->find($churchId);
 
         if (!$church) {
             return response()->json(['success' => false, 'message' => 'Church not found'], 404);
         }
 
-        // Mock or calculate stats
+        // Calculate stats
         $membersCount = Member::where('church_id', $churchId)->count();
         $ministriesCount = Department::where('church_id', $churchId)->count();
-        if ($ministriesCount === 0) $ministriesCount = 12; // fallback mock
         
+        $settings = $church->visibility_settings ?? [];
+        $showPhone = $settings['show_phone'] ?? true;
+        $showEmail = $settings['show_email'] ?? true;
+        $showAddress = $settings['show_address'] ?? true;
+
+        $services = $church->services->map(function($service) {
+            return [
+                'name' => $service->name,
+                'time' => ($service->start_time ? $service->start_time : '') . ($service->end_time ? ' - ' . $service->end_time : '')
+            ];
+        });
+
+        // Use real data, falling back gracefully
         $data = [
             'name' => $church->church_name,
-            'address' => $church->address,
+            'address' => $showAddress ? $church->address : null,
+            'phone' => $showPhone ? $church->phone : null,
+            'email' => $showEmail ? $church->email : null,
             'logo' => $church->logo_url ?? null,
-            'cover_image' => 'https://images.unsplash.com/photo-1438283173091-5dbf5c5a3206?auto=format&fit=crop&q=80&w=800',
-            'about' => $church->about ?? "Leading people to love God, love others and serve the world. We welcome everyone to grow in faith.",
+            'cover_image' => $church->cover_image ?? null, // Will use custom_splash in frontend
+            'about' => $church->about,
+            'website' => $church->website,
+            'facebook' => $church->facebook,
+            'instagram' => $church->instagram,
+            'youtube' => $church->youtube,
+            'twitter' => $church->twitter,
             'stats' => [
                 'members' => number_format($membersCount) . '+',
                 'ministries' => (string) $ministriesCount,
-                'established' => 'Since ' . ($church->established_year ?? '2010'),
+                'established' => 'Since ' . ($church->year_established ?? date('Y')),
                 'pastor' => $church->pastor_name ?? 'Senior Pastor'
             ],
-            'services' => [
-                ['name' => 'Sunday Worship Service', 'time' => '9:00 AM - 10:30 AM'],
-                ['name' => 'Sunday School', 'time' => '10:45 AM - 11:30 AM'],
-                ['name' => 'Youth Service', 'time' => '5:00 PM - 6:30 PM'],
-                ['name' => 'Prayer Meeting', 'time' => 'Wednesday, 7:00 PM']
-            ]
+            'services' => count($services) > 0 ? $services : [] // Empty array handled by frontend
         ];
 
         return response()->json([
