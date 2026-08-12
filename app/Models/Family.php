@@ -14,7 +14,9 @@ class Family extends Model
         'church_id',
         'family_name',
         'phone',
-        'address'
+        'address',
+        'status',
+        'cell_group'
     ];
 
     public function members()
