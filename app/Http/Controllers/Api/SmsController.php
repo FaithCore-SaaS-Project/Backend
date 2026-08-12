@@ -114,4 +114,5 @@ class SmsController extends Controller
         $church->save();
 
         return response()->json(['message' => 'Successfully approved request and added credits to the church']);
+    }
 }
