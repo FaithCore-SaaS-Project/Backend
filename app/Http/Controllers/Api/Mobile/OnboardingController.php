@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Notification;
 use App\Mail\OtpMail;
+use App\Notifications\NewMemberRegistered;
 
 class OnboardingController extends Controller
 {
@@ -179,6 +181,12 @@ class OnboardingController extends Controller
 
         // 3. Generate Auth Token
         $token = $user->createToken('mobile-auth-token')->plainTextToken;
+
+        // 4. Notify Church Admins
+        $admins = User::where('church_id', $church->id)->where('id', '!=', $user->id)->get();
+        if ($admins->count() > 0) {
+            Notification::send($admins, new NewMemberRegistered($request->first_name . ' ' . $request->last_name));
+        }
 
         return response()->json([
             'success' => true,
