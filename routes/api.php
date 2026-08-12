@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SmsController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\WebhookController;
+use App\Http\Controllers\Api\ReceiptController;
 
 // Web SaaS Authentication APIs
 Route::post('/login', [WebAuthController::class, 'login']);
@@ -147,6 +148,9 @@ Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->group(function ()
     Route::post('/finance-categories', [FinanceController::class, 'categoriesStore']);
     Route::put('/finance-categories/{id}', [FinanceController::class, 'categoriesUpdate']);
     Route::delete('/finance-categories/{id}', [FinanceController::class, 'categoriesDestroy']);
+
+    // Receipts
+    Route::apiResource('receipts', ReceiptController::class);
 
     // Gated Finance: Bank Accounts
     Route::middleware('feature:finance.bank_accounts')->group(function () {
