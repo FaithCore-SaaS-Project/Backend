@@ -68,11 +68,50 @@ class SmsController extends Controller
 
         $church = $request->user()->church;
         
-        // In Production, this must be connected to Stripe/PayHere or similar.
-        // We cannot give free credits in a live system.
+        // In this Church Management System, SMS top-ups are manually requested and approved by Super Admins.
+        $price = $request->amount; // Simplified: 1 SMS = 1 Rs. In reality, you'd map package prices.
+
+        \App\Models\SmsTopupRequest::create([
+            'church_id' => $church->id,
+            'amount' => $request->amount,
+            'price' => $price,
+            'status' => 'Pending'
+        ]);
+
         return response()->json([
-            'success' => false,
-            'message' => "Payment Gateway (e.g. Stripe/PayHere) is not yet integrated for live transactions. Please contact administration.",
-        ], 501);
+            'success' => true,
+            'message' => "Successfully submitted a request for {$request->amount} SMS credits. Waiting for Admin approval.",
+        ]);
     }
+
+    /**
+     * Admin: Get all Top-up Requests
+     */
+    public function adminGetRequests(Request $request)
+    {
+        // Add auth check for superadmin here if needed
+        $requests = \App\Models\SmsTopupRequest::with('church')->latest()->get();
+        return response()->json($requests);
+    }
+
+    /**
+     * Admin: Approve a Top-up Request
+     */
+    public function adminApproveRequest(Request $request, $id)
+    {
+        $topupRequest = \App\Models\SmsTopupRequest::findOrFail($id);
+        
+        if ($topupRequest->status !== 'Pending') {
+            return response()->json(['message' => 'Request already processed'], 400);
+        }
+
+        $topupRequest->status = 'Approved';
+        $topupRequest->save();
+
+        // Add credits to the church
+        $church = $topupRequest->church;
+        $church->topup_sms_balance += $topupRequest->amount;
+        $church->save();
+
+        return response()->json(['message' => 'Successfully approved request and added credits to the church']);
 }

@@ -205,6 +205,10 @@ Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->group(function ()
     Route::post('/sms/send', [SmsController::class, 'sendSms']);
     Route::post('/sms/topup', [SmsController::class, 'buyTopup']);
 
+    // Admin SMS Requests (Should ideally be protected by a Super Admin middleware)
+    Route::get('/admin/sms-requests', [SmsController::class, 'adminGetRequests']);
+    Route::post('/admin/sms-requests/{id}/approve', [SmsController::class, 'adminApproveRequest']);
+
     // Reports
     Route::middleware('feature:reports.enabled')->group(function () {
         Route::get('/reports/saved', [ReportController::class, 'getSavedReports']);
