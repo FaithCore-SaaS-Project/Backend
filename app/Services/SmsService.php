@@ -102,11 +102,7 @@ class SmsService
                 $errorMessage = $result['message'] ?? 'Unknown Gateway Error';
                 Log::error("SMSLenz API Error: " . json_encode($result));
                 
-                // For development with dummy keys, we pretend it works.
-                // In production, you would throw the error:
-                if (config('app.env') === 'production') {
-                    throw new Exception("Gateway Error: " . $errorMessage);
-                }
+                throw new Exception("Gateway Error: " . $errorMessage);
             }
 
             // 4. Deduct Credits from Church

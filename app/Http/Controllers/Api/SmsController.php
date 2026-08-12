@@ -68,14 +68,11 @@ class SmsController extends Controller
 
         $church = $request->user()->church;
         
-        // DUMMY IMPLEMENTATION: Directly add to balance for testing
-        $church->topup_sms_balance += $request->amount;
-        $church->save();
-
+        // In Production, this must be connected to Stripe/PayHere or similar.
+        // We cannot give free credits in a live system.
         return response()->json([
-            'success' => true,
-            'message' => "Successfully added {$request->amount} SMS credits to your top-up balance.",
-            'new_balance' => $church->topup_sms_balance
-        ]);
+            'success' => false,
+            'message' => "Payment Gateway (e.g. Stripe/PayHere) is not yet integrated for live transactions. Please contact administration.",
+        ], 501);
     }
 }
