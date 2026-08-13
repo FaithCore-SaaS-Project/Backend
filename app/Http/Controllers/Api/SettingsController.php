@@ -12,7 +12,8 @@ class SettingsController extends Controller
      */
     public function index(Request $request)
     {
-        $settings = \App\Models\Setting::all()->pluck('value', 'key');
+        $churchId = $request->user()->church_id;
+        $settings = \App\Models\Setting::where('church_id', $churchId)->pluck('value', 'key');
         return response()->json($settings);
     }
 
@@ -21,7 +22,7 @@ class SettingsController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->all();
+        $data = $request->except(['church_id', 'id', 'created_at', 'updated_at']);
         $churchId = $request->user()->church_id;
 
         foreach ($data as $key => $value) {

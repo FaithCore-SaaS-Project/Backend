@@ -199,6 +199,7 @@ Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->group(function ()
     Route::post('/settings/church-profile', [\App\Http\Controllers\Api\ChurchProfileController::class, 'update']);
     
     // Settings & Notifications
+    Route::get('/settings/finance-overview', [\App\Http\Controllers\Api\FinanceSettingsController::class, 'overview']);
     Route::apiResource('settings', SettingsController::class);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/send', [NotificationController::class, 'send']);
