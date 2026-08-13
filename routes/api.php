@@ -201,6 +201,12 @@ Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->group(function ()
     // Settings & Notifications
     Route::get('/settings/finance-overview', [\App\Http\Controllers\Api\FinanceSettingsController::class, 'overview']);
     Route::apiResource('settings', SettingsController::class);
+    
+    // Support & Knowledge Base
+    Route::get('/support/articles', [\App\Http\Controllers\Api\SupportController::class, 'getArticles']);
+    Route::get('/support/status', [\App\Http\Controllers\Api\SupportController::class, 'getStatus']);
+    Route::post('/support/subscribe', [\App\Http\Controllers\Api\SupportController::class, 'subscribe']);
+
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/send', [NotificationController::class, 'send']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
