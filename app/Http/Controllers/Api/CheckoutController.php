@@ -14,29 +14,33 @@ class CheckoutController extends Controller
     {
         $request->validate([
             'plan_name' => 'required|string',
+            'is_annual' => 'nullable|boolean',
             'success_url' => 'required|url',
             'cancel_url' => 'required|url',
         ]);
 
+        $isAnnual = $request->input('is_annual', false);
         $church = $request->user()->church;
-        // In a real app we'd fetch the Plan from DB using name or ID.
-        // If Plan table uses names like 'Basic', we can do:
         $plan = Plan::where('name', $request->plan_name)->firstOrFail();
+
+        $rawPrice = $isAnnual ? ($plan->price * 12 * 0.9) : $plan->price;
+        $endDate = $isAnnual ? now()->addYear() : now()->addMonth();
 
         // Fetch or create a pending subscription to attach to the custom_id
         $subscription = Subscription::firstOrCreate(
             ['church_id' => $church->id, 'status' => 'expired'],
             [
                 'plan_id' => $plan->id,
-                'amount' => $plan->price,
+                'amount' => $rawPrice,
                 'start_date' => now(),
-                'end_date' => now()->addMonth()
+                'end_date' => $endDate
             ]
         );
 
         $subscription->update([
             'plan_id' => $plan->id,
-            'amount' => $plan->price
+            'amount' => $rawPrice,
+            'end_date' => $endDate
         ]);
 
         $provider = new PayPalClient;
@@ -55,7 +59,7 @@ class CheckoutController extends Controller
                     "custom_id" => (string)$subscription->id,
                     "amount" => [
                         "currency_code" => "USD",
-                        "value" => number_format($plan->price, 2, '.', '')
+                        "value" => number_format($rawPrice, 2, '.', '')
                     ]
                 ]
             ]
