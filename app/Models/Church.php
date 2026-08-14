@@ -41,6 +41,33 @@ class Church extends Model
         'visibility_settings' => 'array',
     ];
 
+    public function getCoverImageAttribute($value)
+    {
+        if (empty($value) || str_contains($value, 'loremflickr') || str_contains($value, 'placeholder') || str_contains($value, 'unsplash') || str_contains($value, 'fake')) {
+            return null;
+        }
+        if (!str_starts_with($value, 'http')) {
+            return asset('storage/' . $value);
+        }
+        return $value;
+    }
+
+    public function getLogoAttribute($value)
+    {
+        if (empty($value) || str_contains($value, 'loremflickr') || str_contains($value, 'placeholder') || str_contains($value, 'unsplash') || str_contains($value, 'fake')) {
+            return null;
+        }
+        if (!str_starts_with($value, 'http')) {
+            return asset('storage/' . $value);
+        }
+        return $value;
+    }
+
+    public function getLogoUrlAttribute()
+    {
+        return $this->logo;
+    }
+
     public function users()
     {
         return $this->hasMany(User::class);
