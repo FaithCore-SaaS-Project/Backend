@@ -99,6 +99,10 @@ Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->prefix('mobile')-
         Route::get('/family', [\App\Http\Controllers\Api\Mobile\FamilyController::class, 'myFamily']);
         Route::post('/family/members', [\App\Http\Controllers\Api\Mobile\FamilyController::class, 'addMember']);
     });
+    
+    // Notifications
+    Route::get('/notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
 });
 
 // Protected Web SaaS APIs (Basic Tenant Access)
