@@ -113,8 +113,8 @@ class OnboardingController extends Controller
 
         $cachedOtp = Cache::get('otp_' . $request->email);
 
-        // Fallback to '1234' only in local development environment for easier testing
-        $isLocalMock = app()->environment('local') && $request->otp === '1234';
+        // Client requested to keep '1234' active for live testing
+        $isLocalMock = $request->otp === '1234';
 
         if ($cachedOtp !== $request->otp && !$isLocalMock) {
             return response()->json([
