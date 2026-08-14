@@ -75,7 +75,7 @@ class FinanceController extends Controller
             'date' => now()->toDateString(),
             'description' => $request->note ?? 'Mobile App Donation',
             'payment_method' => $request->payment_method,
-            'member_id' => $request->user()->member->id ?? null,
+            'member_id' => $request->user()->member?->id,
             'recorded_by' => $request->user()->id,
         ]);
 
