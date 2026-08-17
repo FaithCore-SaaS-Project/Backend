@@ -193,22 +193,27 @@ Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->group(function ()
         Route::get('/letters/{id}/pdf', [LetterController::class, 'generatePdf']);
     });
 
-    // Users & Roles
-    Route::apiResource('users', UserController::class);
-    
-    // Roles & Custom Permissions
-    Route::middleware('feature:roles.custom_roles')->group(function () {
-        Route::apiResource('roles', RoleController::class);
-        Route::apiResource('permissions', PermissionController::class);
+    // Users & Roles (Protected by manage_users permission)
+    Route::middleware('permission:manage_users')->group(function () {
+        Route::apiResource('users', UserController::class);
+        
+        // Roles & Custom Permissions
+        Route::middleware('feature:roles.custom_roles')->group(function () {
+            Route::apiResource('roles', RoleController::class);
+            Route::apiResource('permissions', PermissionController::class);
+        });
     });
 
-    // Church Profile Settings
-    Route::get('/settings/church-profile', [\App\Http\Controllers\Api\ChurchProfileController::class, 'show']);
-    Route::post('/settings/church-profile', [\App\Http\Controllers\Api\ChurchProfileController::class, 'update']);
-    
-    // Settings & Notifications
-    Route::get('/settings/finance-overview', [\App\Http\Controllers\Api\FinanceSettingsController::class, 'overview']);
-    Route::apiResource('settings', SettingsController::class);
+    // Settings (Protected by manage_settings permission)
+    Route::middleware('permission:manage_settings')->group(function () {
+        // Church Profile Settings
+        Route::get('/settings/church-profile', [\App\Http\Controllers\Api\ChurchProfileController::class, 'show']);
+        Route::post('/settings/church-profile', [\App\Http\Controllers\Api\ChurchProfileController::class, 'update']);
+        
+        // Settings Overview & General
+        Route::get('/settings/finance-overview', [\App\Http\Controllers\Api\FinanceSettingsController::class, 'overview']);
+        Route::apiResource('settings', SettingsController::class);
+    });
     
     // Support & Knowledge Base
     Route::get('/support/articles', [\App\Http\Controllers\Api\SupportController::class, 'getArticles']);
