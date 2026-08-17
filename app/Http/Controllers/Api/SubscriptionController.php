@@ -29,31 +29,9 @@ class SubscriptionController extends Controller
      */
     public function upgrade(Request $request)
     {
-        $request->validate([
-            'plan_id' => 'required|exists:plans,id',
-            'payment_method_id' => 'required|string'
-        ]);
-
-        $churchId = $request->user()->church_id;
-        $plan = Plan::find($request->plan_id);
-
-        // Fetch current active subscription
-        $subscription = Subscription::where('church_id', $churchId)->latest()->first();
-
-        // In a real application, you would interact with the gateway API here
-        // For example, creating a Stripe subscription using the payment_method_id
-        
-        $subscription->update([
-            'plan_id' => $plan->id,
-            'amount' => $plan->price,
-            'status' => 'active',
-            // Update end_date logic based on gateway response
-        ]);
-
         return response()->json([
-            'message' => 'Subscription upgraded successfully',
-            'subscription' => $subscription->load('plan')
-        ]);
+            'error' => 'Please use the official checkout endpoints (/api/checkout/...) to upgrade your subscription.'
+        ], 400);
     }
 
     /**
@@ -61,21 +39,8 @@ class SubscriptionController extends Controller
      */
     public function cancel(Request $request)
     {
-        $churchId = $request->user()->church_id;
-        $subscription = Subscription::where('church_id', $churchId)->latest()->first();
-
-        if ($subscription && $subscription->status === 'active') {
-            // Cancel at gateway here...
-            
-            $subscription->update([
-                'status' => 'cancelled'
-            ]);
-
-            return response()->json([
-                'message' => 'Subscription cancelled successfully. You will have access until the end of your billing cycle.'
-            ]);
-        }
-
-        return response()->json(['message' => 'No active subscription found.'], 400);
+        return response()->json([
+            'error' => 'Please manage subscription cancellations directly through your payment provider portal (Stripe/PayPal) to ensure recurring billing is halted.'
+        ], 400);
     }
 }
