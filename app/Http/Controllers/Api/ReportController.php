@@ -10,9 +10,20 @@ use App\Models\Member;
 use App\Models\EventRegistration;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class ReportController extends Controller
+class ReportController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:view_reports', only: [
+                'financial', 'members', 'attendance', 'getSavedReports', 'storeSavedReport', 'deleteSavedReport'
+            ]),
+        ];
+    }
+
     public function financial(Request $request)
     {
         $startDate = $request->query('start_date', Carbon::now()->startOfMonth()->toDateString());

@@ -23,6 +23,14 @@ class FinanceController extends Controller implements HasMiddleware
             ]),
             new Middleware('permission:create_income', only: ['incomeStore']),
             new Middleware('permission:create_expense', only: ['expenseStore']),
+            new Middleware('permission:edit_finance', only: [
+                'incomeUpdate', 'expenseUpdate',
+                'categoriesUpdate', 'bankAccountsUpdate', 'bankAccountsStore', 'budgetUpdate', 'budgetStore',
+                'categoriesStore'
+            ]),
+            new Middleware('permission:delete_finance', only: [
+                'recordsDestroy', 'categoriesDestroy', 'bankAccountsDestroy', 'budgetDestroy'
+            ]),
         ];
     }
 

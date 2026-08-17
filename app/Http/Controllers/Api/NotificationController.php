@@ -7,9 +7,17 @@ use Illuminate\Http\Request;
 use App\Models\Member;
 use App\Notifications\MemberAnnouncement;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class NotificationController extends Controller
+class NotificationController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:send_notifications', only: ['send']),
+        ];
+    }
     /**
      * Display a listing of the resource.
      */
