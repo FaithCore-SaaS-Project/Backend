@@ -45,6 +45,10 @@ Route::prefix('super-admin')->middleware('super_admin')->group(function () {
     Route::get('/payments', [\App\Http\Controllers\Api\SuperAdminController::class, 'payments']);
     Route::post('/churches/{id}/toggle-status', [\App\Http\Controllers\Api\SuperAdminController::class, 'toggleChurchStatus']);
     Route::post('/churches/{id}/sms-settings', [\App\Http\Controllers\Api\SuperAdminController::class, 'updateSmsSettings']);
+
+    // Secure Admin SMS Requests
+    Route::get('/sms-requests', [\App\Http\Controllers\Api\SmsController::class, 'adminGetRequests']);
+    Route::post('/sms-requests/{id}/approve', [\App\Http\Controllers\Api\SmsController::class, 'adminApproveRequest']);
 });
 
 // Mobile Onboarding APIs (Unprotected)
@@ -220,9 +224,7 @@ Route::middleware(['auth:sanctum', 'tenant', 'subscription'])->group(function ()
     Route::post('/sms/send', [SmsController::class, 'sendSms']);
     Route::post('/sms/topup', [SmsController::class, 'buyTopup']);
 
-    // Admin SMS Requests (Should ideally be protected by a Super Admin middleware)
-    Route::get('/admin/sms-requests', [SmsController::class, 'adminGetRequests']);
-    Route::post('/admin/sms-requests/{id}/approve', [SmsController::class, 'adminApproveRequest']);
+    // Admin SMS Requests have been moved to the super-admin middleware group for security
 
     // Reports
     Route::middleware('feature:reports.enabled')->group(function () {
