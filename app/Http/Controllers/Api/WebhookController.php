@@ -192,7 +192,33 @@ class WebhookController extends Controller
 
     private function verifyStripeSignature($payload, $sigHeader, $secret)
     {
-        return !empty($sigHeader) && !empty($secret);
+        if (empty($sigHeader) || empty($secret)) {
+            return false;
+        }
+
+        $parts = explode(',', $sigHeader);
+        $timestamp = null;
+        $signatures = [];
+
+        foreach ($parts as $part) {
+            $split = explode('=', trim($part), 2);
+            if (count($split) === 2) {
+                if ($split[0] === 't') {
+                    $timestamp = $split[1];
+                } elseif ($split[0] === 'v1') {
+                    $signatures[] = $split[1];
+                }
+            }
+        }
+
+        if (!$timestamp || empty($signatures)) {
+            return false;
+        }
+
+        $signedPayload = $timestamp . '.' . $payload;
+        $expectedSignature = hash_hmac('sha256', $signedPayload, $secret);
+
+        return in_array($expectedSignature, $signatures);
     }
 
     private function handleFailedPayment($subscriptionId, $gateway, $payload)
