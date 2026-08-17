@@ -4,11 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Scopes\TenantScope;
+use App\Models\Traits\BelongsToChurch;
 
 class Receipt extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToChurch;
 
     protected $fillable = [
         'church_id',
@@ -25,19 +25,5 @@ class Receipt extends Model
         'description'
     ];
 
-    protected static function booted()
-    {
-        static::addGlobalScope(new TenantScope);
-
-        static::creating(function ($model) {
-            if (empty($model->church_id) && auth()->check()) {
-                $model->church_id = auth()->user()->church_id;
-            }
-        });
-    }
-
-    public function church()
-    {
-        return $this->belongsTo(Church::class, 'church_id');
-    }
+    // The church() relationship and scoping are automatically handled by the BelongsToChurch trait
 }
