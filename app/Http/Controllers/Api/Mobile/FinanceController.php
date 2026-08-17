@@ -24,11 +24,21 @@ class FinanceController extends Controller
             $query->where('recorded_by', $user->id);
         }
 
-        $history = $query->with('category:id,name')->paginate(20);
+        $history = $query->paginate(20);
+
+        // Transform the response to match what the mobile app expects (mock category relation)
+        $formattedItems = collect($history->items())->map(function ($item) {
+            $arr = $item->toArray();
+            $arr['category'] = [
+                'id' => 0,
+                'name' => $item->category
+            ];
+            return $arr;
+        });
 
         return response()->json([
             'success' => true,
-            'data'    => $history->items(),
+            'data'    => $formattedItems,
             'meta'    => [
                 'total'        => $history->total(),
                 'current_page' => $history->currentPage(),
@@ -68,13 +78,16 @@ class FinanceController extends Controller
         // For now, we just record the income as completed if payment_method is cash/transfer
         // or integrate the payment gateway hook.
 
+        // Map Mobile fields to Web Backend schema
+        $category = FinanceCategory::find($request->category_id);
+
         $income = FinanceIncome::create([
             'church_id' => $request->user()->church_id,
-            'category_id' => $request->category_id,
+            'category' => $category ? $category->name : 'Donation',
             'amount' => $request->amount,
-            'date' => now()->toDateString(),
+            'income_date' => now()->toDateString(),
             'description' => $request->note ?? 'Mobile App Donation',
-            'payment_method' => $request->payment_method,
+            'method' => $request->payment_method,
             'member_id' => $request->user()->member?->id,
             'recorded_by' => $request->user()->id,
         ]);

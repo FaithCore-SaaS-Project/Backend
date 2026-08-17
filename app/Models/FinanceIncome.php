@@ -19,6 +19,8 @@ class FinanceIncome extends Model
         'income_date',
         'method',
         'receipt',
-        'description'
+        'description',
+        'member_id',
+        'recorded_by'
     ];
 }
