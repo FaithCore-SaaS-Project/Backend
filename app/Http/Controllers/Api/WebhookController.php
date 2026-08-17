@@ -85,15 +85,29 @@ class WebhookController extends Controller
 
         if (isset($event['event_type']) && $event['event_type'] === 'PAYMENT.CAPTURE.COMPLETED') {
             $resource = $event['resource'];
+            $transactionId = $resource['id'] ?? null;
             
-            // Extract the custom_id (which is our subscription ID)
-            $subscriptionId = $resource['custom_id'] ?? null;
-            $transactionId = $resource['id'];
-            $amount = $resource['amount']['value'] ?? 0;
+            if (!$transactionId) {
+                return response()->json(['status' => 'success']);
+            }
 
-            if ($subscriptionId) {
-                $currency = $resource['amount']['currency_code'] ?? 'USD';
-                $this->processPayment($subscriptionId, 'paypal', $amount, $transactionId, $payload, $currency);
+            try {
+                // Verify the transaction actually exists and is completed on PayPal servers to prevent spoofing
+                $captureDetails = $provider->showCaptureDetails($transactionId);
+
+                if (isset($captureDetails['status']) && $captureDetails['status'] === 'COMPLETED') {
+                    $subscriptionId = $captureDetails['custom_id'] ?? $resource['custom_id'] ?? null;
+                    $amount = $captureDetails['amount']['value'] ?? $resource['amount']['value'] ?? 0;
+                    $currency = $captureDetails['amount']['currency_code'] ?? $resource['amount']['currency_code'] ?? 'USD';
+
+                    if ($subscriptionId) {
+                        $this->processPayment($subscriptionId, 'paypal', $amount, $transactionId, $payload, $currency);
+                    }
+                } else {
+                    Log::warning("PayPal Webhook Verification Failed: Capture {$transactionId} is not COMPLETED.");
+                }
+            } catch (\Exception $e) {
+                Log::error("PayPal Webhook Verification Error: " . $e->getMessage());
             }
         }
 
@@ -144,6 +158,12 @@ class WebhookController extends Controller
             $planPrice = $subscription->plan->price;
             $isAnnual = ($planPrice > 0 && $amount >= $planPrice * 10);
             $endDate = $isAnnual ? Carbon::now()->addYear() : Carbon::now()->addMonth();
+
+            // Prevent duplicate active subscriptions by expiring older ones
+            Subscription::where('church_id', $subscription->church_id)
+                ->where('id', '!=', $subscription->id)
+                ->where('status', 'active')
+                ->update(['status' => 'expired']);
 
             $subscription->update([
                 'status' => 'active',

@@ -26,21 +26,14 @@ class CheckoutController extends Controller
         $rawPrice = $isAnnual ? ($plan->price * 12 * 0.9) : $plan->price;
         $endDate = $isAnnual ? now()->addYear() : now()->addMonth();
 
-        // Fetch or create a pending subscription to attach to the custom_id
-        $subscription = Subscription::firstOrCreate(
-            ['church_id' => $church->id, 'status' => 'expired'],
-            [
-                'plan_id' => $plan->id,
-                'amount' => $rawPrice,
-                'start_date' => now(),
-                'end_date' => $endDate
-            ]
-        );
-
-        $subscription->update([
+        // Create a new pending subscription (using 'expired' status as pending)
+        $subscription = Subscription::create([
+            'church_id' => $church->id,
             'plan_id' => $plan->id,
             'amount' => $rawPrice,
-            'end_date' => $endDate
+            'start_date' => now(),
+            'end_date' => $endDate,
+            'status' => 'expired'
         ]);
 
         $provider = new PayPalClient;
@@ -92,21 +85,14 @@ class CheckoutController extends Controller
         $rawPrice = $isAnnual ? ($plan->price * 12 * 0.9) : $plan->price;
         $endDate = $isAnnual ? now()->addYear() : now()->addMonth();
 
-        // Fetch or create a pending subscription
-        $subscription = Subscription::firstOrCreate(
-            ['church_id' => $church->id, 'status' => 'expired'],
-            [
-                'plan_id' => $plan->id,
-                'amount' => $rawPrice,
-                'start_date' => now(),
-                'end_date' => $endDate
-            ]
-        );
-
-        $subscription->update([
+        // Create a new pending subscription
+        $subscription = Subscription::create([
+            'church_id' => $church->id,
             'plan_id' => $plan->id,
             'amount' => $rawPrice,
-            'end_date' => $endDate
+            'start_date' => now(),
+            'end_date' => $endDate,
+            'status' => 'expired'
         ]);
 
         $merchantId = env('PAYHERE_MERCHANT_ID');
