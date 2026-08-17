@@ -20,7 +20,14 @@ class SuperAdminAuth
         }
 
         $token = $request->header('X-Super-Admin-Token');
-        $expectedToken = env('SUPER_ADMIN_TOKEN', 'Admin@FaithCore');
+        $expectedToken = env('SUPER_ADMIN_TOKEN');
+
+        if (empty($expectedToken)) {
+            // Failsafe: If no token is set in .env, block all access to prevent fallback vulnerability!
+            return response()->json([
+                'message' => 'Super Admin Token is not configured on the server. Access Denied.'
+            ], 403);
+        }
 
         if (!$token || $token !== $expectedToken) {
             return response()->json([

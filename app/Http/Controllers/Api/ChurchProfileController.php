@@ -55,7 +55,9 @@ class ChurchProfileController extends Controller
             'cover_image' => 'nullable|image|max:4096',
         ]);
 
-        $church->fill($request->except(['logo', 'cover_image']));
+        // Secure against Mass Assignment by strictly using only the $validated array
+        $safeData = collect($validated)->except(['logo', 'cover_image'])->toArray();
+        $church->fill($safeData);
 
         if ($request->hasFile('logo')) {
             if ($church->logo && Storage::disk('public')->exists($church->logo)) {
