@@ -49,7 +49,7 @@ class UserController extends Controller
             ],
             'phone' => 'nullable|string|max:20',
             'password' => 'required|string|min:6',
-            'role' => 'required|string|exists:roles,name',
+            'role' => ['required', 'string', 'exists:roles,name', Rule::notIn(['Super Admin'])],
             'status' => 'boolean'
         ]);
 
@@ -100,7 +100,7 @@ class UserController extends Controller
             ],
             'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:6',
-            'role' => 'required|string|exists:roles,name',
+            'role' => ['required', 'string', 'exists:roles,name', Rule::notIn(['Super Admin'])],
             'status' => 'boolean'
         ]);
 

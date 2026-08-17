@@ -50,7 +50,7 @@ class DocumentController extends Controller implements HasMiddleware
     public function upload(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|max:20480' // max 20MB
+            'file' => 'required|file|max:20480|mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,jpg,jpeg,png' // max 20MB, safe extensions only to prevent RCE
         ]);
 
         $user = $request->user();
