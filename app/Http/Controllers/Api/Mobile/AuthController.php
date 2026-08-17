@@ -53,7 +53,7 @@ class AuthController extends Controller
             'last_name'  => 'sometimes|required|string|max:100',
             'email'      => 'sometimes|required|email|unique:users,email,' . $user->id,
             'phone'      => 'sometimes|nullable|string|max:30',
-            'gender'     => 'sometimes|nullable|in:Male,Female,Other',
+            'gender'     => 'sometimes|nullable|in:Male,Female,male,female',
             'dob'        => 'sometimes|nullable|date',
             'address'    => 'sometimes|nullable|string|max:255',
         ]);
@@ -63,6 +63,7 @@ class AuthController extends Controller
             'first_name' => $validated['first_name'] ?? null,
             'last_name'  => $validated['last_name'] ?? null,
             'email'      => $validated['email'] ?? null,
+            'phone'      => $validated['phone'] ?? null,
         ]);
         if (!empty($userFields)) {
             $user->update($userFields);
@@ -76,7 +77,7 @@ class AuthController extends Controller
                 'last_name'  => $validated['last_name'] ?? null,
                 'email'      => $validated['email'] ?? null,
                 'phone'      => $validated['phone'] ?? null,
-                'gender'     => $validated['gender'] ?? null,
+                'gender'     => isset($validated['gender']) ? strtolower($validated['gender']) : null,
                 'dob'        => $validated['dob'] ?? null,
                 'address'    => $validated['address'] ?? null,
             ], fn($v) => !is_null($v));
