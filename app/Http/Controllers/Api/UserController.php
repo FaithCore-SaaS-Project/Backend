@@ -10,28 +10,33 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    private $systemRoles = ['Super Admin', 'Church Administrator', 'Pastor', 'Treasurer', 'Department Leader', 'Member'];
+
     public function index()
     {
-        $users = User::where('church_id', auth()->user()->church_id)
+        $churchId = auth()->user()->church_id;
+        $users = User::where('church_id', $churchId)
             ->with('roles')
             ->orderBy('id', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($user) use ($churchId) {
+                $user->roles = $user->roles->map(function ($role) use ($churchId) {
+                    $role->name = str_starts_with($role->name, $churchId . '_') ? substr($role->name, strlen($churchId . '_')) : $role->name;
+                    return $role;
+                });
+                return $user;
+            });
 
         return response()->json($users);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $church = $request->user()->church;
+        $churchId = $church->id;
         $plan = $church ? $church->activePlan() : null;
         if ($plan) {
-            $userCount = User::where('church_id', auth()->user()->church_id)->count();
+            $userCount = User::where('church_id', $churchId)->count();
             if ($userCount >= $plan->user_limit) {
                 return response()->json([
                     'message' => 'Your plan (' . $plan->name . ') allows up to ' . $plan->user_limit . ' admin users. Please upgrade your subscription.'
@@ -45,16 +50,23 @@ class UserController extends Controller
             'email' => [
                 'required',
                 'email',
-                Rule::unique('users')->where(fn ($q) => $q->where('church_id', auth()->user()->church_id))
+                Rule::unique('users')->where(fn ($q) => $q->where('church_id', $churchId))
             ],
             'phone' => 'nullable|string|max:20',
             'password' => 'required|string|min:6',
-            'role' => ['required', 'string', 'exists:roles,name', Rule::notIn(['Super Admin'])],
+            'role' => ['required', 'string', Rule::notIn(['Super Admin'])],
             'status' => 'boolean'
         ]);
 
+        $inputRole = $validated['role'];
+        $actualRoleName = in_array($inputRole, $this->systemRoles) ? $inputRole : $churchId . '_' . $inputRole;
+
+        if (!\Spatie\Permission\Models\Role::where('name', $actualRoleName)->exists()) {
+             return response()->json(['message' => 'The selected role is invalid.'], 422);
+        }
+
         $user = User::create([
-            'church_id' => auth()->user()->church_id,
+            'church_id' => $churchId,
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
             'email' => $validated['email'],
@@ -63,30 +75,40 @@ class UserController extends Controller
             'status' => $validated['status'] ?? true
         ]);
 
-        $user->assignRole($validated['role']);
+        $user->assignRole($actualRoleName);
 
-        return response()->json($user->load('roles'), 201);
+        $user->load('roles');
+        $user->roles = $user->roles->map(function ($role) use ($churchId) {
+            $role->name = str_starts_with($role->name, $churchId . '_') ? substr($role->name, strlen($churchId . '_')) : $role->name;
+            return $role;
+        });
+
+        return response()->json($user, 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
         $user = User::findOrFail($id);
-        if ($user->church_id !== auth()->user()->church_id) {
+        $churchId = auth()->user()->church_id;
+        if ($user->church_id !== $churchId) {
             abort(403);
         }
-        return response()->json($user->load('roles'));
+        
+        $user->load('roles');
+        $user->roles = $user->roles->map(function ($role) use ($churchId) {
+            $role->name = str_starts_with($role->name, $churchId . '_') ? substr($role->name, strlen($churchId . '_')) : $role->name;
+            return $role;
+        });
+        
+        return response()->json($user);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         $user = User::findOrFail($id);
-        if ($user->church_id !== auth()->user()->church_id) {
+        $churchId = auth()->user()->church_id;
+        
+        if ($user->church_id !== $churchId) {
             abort(403);
         }
 
@@ -96,13 +118,20 @@ class UserController extends Controller
             'email' => [
                 'required',
                 'email',
-                Rule::unique('users')->ignore($user->id)->where(fn ($q) => $q->where('church_id', auth()->user()->church_id))
+                Rule::unique('users')->ignore($user->id)->where(fn ($q) => $q->where('church_id', $churchId))
             ],
             'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:6',
-            'role' => ['required', 'string', 'exists:roles,name', Rule::notIn(['Super Admin'])],
+            'role' => ['required', 'string', Rule::notIn(['Super Admin'])],
             'status' => 'boolean'
         ]);
+
+        $inputRole = $validated['role'];
+        $actualRoleName = in_array($inputRole, $this->systemRoles) ? $inputRole : $churchId . '_' . $inputRole;
+
+        if (!\Spatie\Permission\Models\Role::where('name', $actualRoleName)->exists()) {
+             return response()->json(['message' => 'The selected role is invalid.'], 422);
+        }
 
         $user->fill([
             'first_name' => $validated['first_name'],
@@ -118,14 +147,17 @@ class UserController extends Controller
 
         $user->save();
 
-        $user->syncRoles([$validated['role']]);
+        $user->syncRoles([$actualRoleName]);
 
-        return response()->json($user->load('roles'));
+        $user->load('roles');
+        $user->roles = $user->roles->map(function ($role) use ($churchId) {
+            $role->name = str_starts_with($role->name, $churchId . '_') ? substr($role->name, strlen($churchId . '_')) : $role->name;
+            return $role;
+        });
+
+        return response()->json($user);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $user = User::findOrFail($id);
@@ -133,7 +165,6 @@ class UserController extends Controller
             abort(403);
         }
         
-        // Prevent users from deleting themselves
         if ($user->id === auth()->user()->id) {
             return response()->json(['error' => 'You cannot delete your own account.'], 403);
         }

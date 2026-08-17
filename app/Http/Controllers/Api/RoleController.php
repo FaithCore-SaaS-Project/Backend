@@ -9,40 +9,53 @@ use Illuminate\Http\Request;
 
 class RoleController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    private $systemRoles = ['Super Admin', 'Church Administrator', 'Pastor', 'Treasurer', 'Department Leader', 'Member'];
+
+    public function index(Request $request)
     {
-        $roles = Role::with('permissions')->get()->map(function($role) {
-            return [
-                'id' => $role->id,
-                'name' => $role->name,
-                'guard_name' => $role->guard_name,
-                'permissions' => $role->permissions->pluck('name'),
-                'users_count' => \App\Models\User::role($role->name)->where('church_id', auth()->user()->church_id)->count(),
-                'status' => 'Active',
-                'description' => $role->name . ' role permissions.',
-                'created_at' => $role->created_at
-            ];
-        });
+        $churchId = $request->user()->church_id;
+
+        $roles = Role::with('permissions')
+            ->whereIn('name', $this->systemRoles)
+            ->orWhere('name', 'like', $churchId . '\_%')
+            ->get()->map(function($role) use ($churchId) {
+                
+                $displayName = str_starts_with($role->name, $churchId . '_') 
+                    ? substr($role->name, strlen($churchId . '_')) 
+                    : $role->name;
+
+                return [
+                    'id' => $role->id,
+                    'name' => $displayName,
+                    'guard_name' => $role->guard_name,
+                    'permissions' => $role->permissions->pluck('name'),
+                    'users_count' => \App\Models\User::role($role->name)->where('church_id', $churchId)->count(),
+                    'status' => 'Active',
+                    'description' => $displayName . ' role permissions.',
+                    'created_at' => $role->created_at
+                ];
+            });
 
         return response()->json($roles);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|unique:roles,name|max:255',
+            'name' => 'required|string|max:255',
             'permissions' => 'nullable|array',
             'permissions.*' => 'string|exists:permissions,name'
         ]);
 
+        $churchId = $request->user()->church_id;
+        $roleName = $churchId . '_' . $validated['name'];
+
+        if (in_array($validated['name'], $this->systemRoles) || Role::where('name', $roleName)->exists()) {
+            return response()->json(['message' => 'A role with this name already exists for your church.'], 422);
+        }
+
         $role = Role::create([
-            'name' => $validated['name'],
+            'name' => $roleName,
             'guard_name' => 'web'
         ]);
 
@@ -52,40 +65,54 @@ class RoleController extends Controller
 
         return response()->json([
             'id' => $role->id,
-            'name' => $role->name,
+            'name' => $validated['name'],
             'guard_name' => $role->guard_name,
             'permissions' => $role->permissions->pluck('name'),
             'users_count' => 0,
             'status' => 'Active',
-            'description' => $role->name . ' role permissions.',
+            'description' => $validated['name'] . ' role permissions.',
             'created_at' => $role->created_at
         ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
         $role = Role::findOrFail($id);
-        return response()->json($role->load('permissions'));
+        $churchId = $request->user()->church_id;
+
+        if (!in_array($role->name, $this->systemRoles) && !str_starts_with($role->name, $churchId . '_')) {
+             return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $roleData = $role->load('permissions')->toArray();
+        $roleData['name'] = str_starts_with($role->name, $churchId . '_') ? substr($role->name, strlen($churchId . '_')) : $role->name;
+
+        return response()->json($roleData);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         $role = Role::findOrFail($id);
+        $churchId = $request->user()->church_id;
+
+        if (in_array($role->name, $this->systemRoles) || !str_starts_with($role->name, $churchId . '_')) {
+            return response()->json(['error' => 'You cannot modify this role.'], 403);
+        }
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
+            'name' => 'required|string|max:255',
             'permissions' => 'nullable|array',
             'permissions.*' => 'string|exists:permissions,name'
         ]);
+        
+        $newRoleName = $churchId . '_' . $validated['name'];
+        
+        if ($newRoleName !== $role->name && Role::where('name', $newRoleName)->exists()) {
+             return response()->json(['message' => 'A role with this name already exists.'], 422);
+        }
 
         $role->update([
-            'name' => $validated['name']
+            'name' => $newRoleName
         ]);
 
         if (isset($validated['permissions'])) {
@@ -94,26 +121,27 @@ class RoleController extends Controller
 
         return response()->json([
             'id' => $role->id,
-            'name' => $role->name,
+            'name' => $validated['name'],
             'guard_name' => $role->guard_name,
             'permissions' => $role->permissions->pluck('name'),
-            'users_count' => \App\Models\User::role($role->name)->where('church_id', auth()->user()->church_id)->count(),
+            'users_count' => \App\Models\User::role($role->name)->where('church_id', $churchId)->count(),
             'status' => 'Active',
-            'description' => $role->name . ' role permissions.',
+            'description' => $validated['name'] . ' role permissions.',
             'created_at' => $role->created_at
         ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
         $role = Role::findOrFail($id);
+        $churchId = $request->user()->church_id;
 
-        // Don't allow deleting core system roles
-        if (in_array($role->name, ['Super Admin', 'Church Administrator', 'Pastor', 'Treasurer', 'Department Leader', 'Member'])) {
+        if (in_array($role->name, $this->systemRoles)) {
             return response()->json(['error' => 'System roles cannot be deleted.'], 403);
+        }
+
+        if (!str_starts_with($role->name, $churchId . '_')) {
+            return response()->json(['error' => 'You cannot delete this role.'], 403);
         }
 
         $role->delete();
