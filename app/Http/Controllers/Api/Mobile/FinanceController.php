@@ -29,6 +29,7 @@ class FinanceController extends Controller
         // Transform the response to match what the mobile app expects (mock category relation)
         $formattedItems = collect($history->items())->map(function ($item) {
             $arr = $item->toArray();
+            $arr['amount'] = (float) $item->amount;
             $arr['category'] = [
                 'id' => 0,
                 'name' => $item->category

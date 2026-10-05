@@ -19,7 +19,7 @@ class WebhookController extends Controller
     {
         $payload = $request->getContent();
         $sigHeader = $request->header('Stripe-Signature');
-        $endpointSecret = env('STRIPE_WEBHOOK_SECRET');
+        $endpointSecret = config('services.stripe.webhook_secret') ?: env('STRIPE_WEBHOOK_SECRET');
 
         try {
             if (!$this->verifyStripeSignature($payload, $sigHeader, $endpointSecret)) {
@@ -51,7 +51,7 @@ class WebhookController extends Controller
         $statusCode = $request->input('status_code');
         $md5sig = $request->input('md5sig');
 
-        $merchantSecret = env('PAYHERE_SECRET');
+        $merchantSecret = config('services.payhere.secret') ?: env('PAYHERE_SECRET');
         
         // Strict Signature Verification
         $localMd5sig = strtoupper(md5($merchantId . $orderId . $payhereAmount . $payhereCurrency . $statusCode . strtoupper(md5($merchantSecret))));

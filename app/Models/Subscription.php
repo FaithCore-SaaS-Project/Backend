@@ -20,5 +20,10 @@ class Subscription extends Model
         'billing_cycle'
     ];
 
+    protected $casts = [
+        'start_date' => 'date',
+        'end_date'   => 'date',
+    ];
+
     public function plan() { return $this->belongsTo(Plan::class); }
 }

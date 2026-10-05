@@ -30,7 +30,7 @@ Route::post('/register', [WebAuthController::class, 'register']);
 Route::post('/activate', [WebAuthController::class, 'activate']);
 
 // Mobile Authentication APIs
-Route::post('/mobile/login', [WebAuthController::class, 'login']);
+Route::post('/mobile/login', [\App\Http\Controllers\Api\Mobile\AuthController::class, 'login']);
 
 // Webhook Endpoints (Unprotected)
 Route::post('/webhooks/stripe', [WebhookController::class, 'stripe']);

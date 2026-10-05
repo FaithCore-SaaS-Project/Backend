@@ -26,6 +26,7 @@ return new class extends Migration
           ->nullable();
     $table->boolean('status')
           ->default(true);
+    $table->string('push_token')->nullable();
     $table->rememberToken();
     $table->timestamps();
 });

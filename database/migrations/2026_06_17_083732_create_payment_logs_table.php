@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('payment_logs', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('payment_id')->nullable()->constrained()->onDelete('cascade');
+            $table->text('request_payload')->nullable();
+            $table->text('response_payload')->nullable();
             $table->timestamps();
         });
     }

@@ -80,12 +80,15 @@ class FamilyController extends Controller
         }
 
         // Create the new member record under this family
+        $memberNo = 'MEM-' . strtoupper(\Illuminate\Support\Str::random(6));
+
         $newMember = Member::create([
             'church_id'   => $user->church_id,
             'family_id'   => $family->id,
+            'member_no'   => $memberNo,
             'first_name'  => $validated['first_name'],
             'last_name'   => $validated['last_name'],
-            'gender'      => $validated['gender'] ?? null,
+            'gender'      => isset($validated['gender']) ? strtolower($validated['gender']) : null,
             'dob'         => $validated['dob'] ?? null,
             'phone'       => $validated['phone'] ?? null,
             'email'       => $validated['email'] ?? null,

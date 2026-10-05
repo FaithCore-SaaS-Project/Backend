@@ -18,8 +18,8 @@ class SubscriptionMiddleware
         
         $subscription = Subscription::where('church_id', $churchId)->latest()->first();
 
-        // If no subscription or it is expired/cancelled, block access
-        if (!$subscription || in_array($subscription->status, ['expired', 'cancelled'])) {
+        // If no subscription or it is expired/cancelled/past end_date, block access
+        if (!$subscription || in_array($subscription->status, ['expired', 'cancelled']) || now()->startOfDay()->gt(\Carbon\Carbon::parse($subscription->end_date)->startOfDay())) {
             return response()->json([
                 'message' => 'Subscription expired or cancelled. Please upgrade your plan to restore access.'
             ], 403);
