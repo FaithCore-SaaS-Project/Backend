@@ -8,12 +8,12 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     */
     public function up(): void
     {
+        Schema::dropIfExists('receipts');
         Schema::create('receipts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('church_id')->constrained('tenants')->onDelete('cascade');
+            $table->foreignId('church_id')->constrained('churches')->onDelete('cascade');
             $table->string('receipt_no');
             $table->date('receipt_date');
             $table->string('member_name');
