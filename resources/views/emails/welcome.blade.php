@@ -183,13 +183,13 @@
                 <div class="step-item">
                     <span class="step-number">1</span>
                     <span class="step-text">
-                        <strong>Download the software:</strong> Click the button below to go to the download page and fetch the installer for Windows or Mac.
+                        <strong>Choose your platform:</strong> Download the software for Windows or Mac, or access immediately from your iPad or Web browser at <a href="https://app.faithcore.org" style="color: #5B3DF5; font-weight: 700;">app.faithcore.org</a>.
                     </span>
                 </div>
                 <div class="step-item">
                     <span class="step-number">2</span>
                     <span class="step-text">
-                        <strong>Activate:</strong> Run the application and enter your Church Activation ID: <code>{{ $activationCode }}</code>.
+                        <strong>Activate:</strong> Run the application or open the web console and enter your Church Activation ID: <code>{{ $activationCode }}</code>.
                     </span>
                 </div>
                 <div class="step-item">
@@ -200,8 +200,9 @@
                 </div>
             </div>
 
-            <div style="text-align: center;">
-                <a href="https://faithcore.org/features#download" class="button">Download Desktop App</a>
+            <div style="text-align: center; margin-bottom: 30px;">
+                <a href="https://app.faithcore.org" class="button" style="background-color: #5B3DF5; margin-right: 10px;">Open Web Console (iPad / Web)</a>
+                <a href="https://faithcore.org/features#download" class="button" style="background-color: #1B2F5E;">Download Desktop App</a>
             </div>
         </div>
 
