@@ -51,6 +51,7 @@ class ChurchProfileController extends Controller
             'youtube' => 'nullable|url',
             'twitter' => 'nullable|url',
             'visibility_settings' => 'nullable|array',
+            'currency' => 'nullable|string|max:10',
             'logo' => 'nullable|image|max:2048',
             'cover_image' => 'nullable|image|max:4096',
         ]);

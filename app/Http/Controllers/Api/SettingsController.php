@@ -30,6 +30,11 @@ class SettingsController extends Controller
                 ['church_id' => $churchId, 'key' => $key],
                 ['value' => $value]
             );
+
+            // Keep church master currency column perfectly synchronized
+            if ($key === 'finance_currency' && !empty($value)) {
+                \App\Models\Church::where('id', $churchId)->update(['currency' => $value]);
+            }
         }
 
         return response()->json(['message' => 'Settings saved successfully']);
