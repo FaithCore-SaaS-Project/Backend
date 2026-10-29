@@ -27,6 +27,7 @@ class FamilyController extends Controller
             return [
                 'id' => $f->id,
                 'name' => $f->family_name,
+                'family_name' => $f->family_name,
                 'members' => $f->members_count,
                 'district' => $f->address ?? '',
                 'joined' => $f->created_at->format('d M Y'),
