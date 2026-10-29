@@ -9,6 +9,9 @@ use App\Models\FinanceExpense;
 use App\Models\FinanceCategory;
 use App\Models\BankAccount;
 use App\Models\Budget;
+use App\Models\Member;
+use App\Services\SmsService;
+use Illuminate\Support\Facades\Log;
 
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -37,7 +40,7 @@ class FinanceController extends Controller implements HasMiddleware
     // --- Unified Ledger Records ---
     public function recordsIndex(Request $request)
     {
-        $incomes = FinanceIncome::latest('income_date')->get();
+        $incomes = FinanceIncome::with('member')->latest('income_date')->get();
         $expenses = FinanceExpense::latest('expense_date')->get();
 
         $formatted = [];
@@ -52,6 +55,8 @@ class FinanceController extends Controller implements HasMiddleware
                 'description' => $inc->description ?? '',
                 'method' => $inc->method,
                 'receipt' => $inc->receipt,
+                'member_id' => $inc->member_id ? (string) $inc->member_id : null,
+                'member_name' => $inc->member ? trim($inc->member->first_name . ' ' . $inc->member->last_name) : null,
                 'tenantId' => (string) $inc->church_id
             ];
         }
@@ -106,11 +111,38 @@ class FinanceController extends Controller implements HasMiddleware
             'income_date' => 'required|date',
             'method' => 'required|string|in:Cash,Bank Transfer',
             'receipt' => 'nullable|string|max:255',
-            'description' => 'nullable|string'
+            'description' => 'nullable|string',
+            'member_id' => 'nullable|exists:members,id',
+            'send_sms' => 'nullable|boolean'
         ]);
 
         $income = FinanceIncome::create($validated);
-        return response()->json($income, 201);
+
+        // Auto-send Thank-You SMS acknowledgement to donor member
+        $smsSent = false;
+        if (!empty($validated['member_id']) && $request->input('send_sms', true)) {
+            $member = Member::find($validated['member_id']);
+            if ($member && !empty($member->phone)) {
+                $church = $request->user()->church;
+                $churchName = $church->name ?? 'Our Church';
+                $memberName = trim(($member->first_name ?? '') . ' ' . ($member->last_name ?? ''));
+                $formattedAmount = number_format($validated['amount']);
+
+                $message = "Dear {$memberName}, we gratefully acknowledge receipt of your contribution of LKR {$formattedAmount}. Thank you for your faithfulness and generosity in supporting the work of God. May the Lord bless you abundantly and reward your kindness according to His riches in glory. (Philippians 4:19)\n\n— {$churchName}";
+
+                try {
+                    app(SmsService::class)->sendSms($church, $member->phone, $message);
+                    $smsSent = true;
+                } catch (\Exception $e) {
+                    Log::warning("Failed to auto-send offering SMS to member {$member->id}: " . $e->getMessage());
+                }
+            }
+        }
+
+        return response()->json([
+            'data' => $income,
+            'sms_sent' => $smsSent
+        ], 201);
     }
 
     public function incomeUpdate(Request $request, $id)

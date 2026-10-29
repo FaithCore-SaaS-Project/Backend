@@ -23,4 +23,9 @@ class FinanceIncome extends Model
         'member_id',
         'recorded_by'
     ];
+
+    public function member()
+    {
+        return $this->belongsTo(Member::class, 'member_id');
+    }
 }
