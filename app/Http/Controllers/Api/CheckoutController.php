@@ -95,8 +95,9 @@ class CheckoutController extends Controller
             'status' => 'expired'
         ]);
 
-        $merchantId = env('PAYHERE_MERCHANT_ID');
-        $merchantSecret = env('PAYHERE_SECRET');
+        $merchantId = config('services.payhere.merchant_id') ?: env('PAYHERE_MERCHANT_ID');
+        $merchantSecret = config('services.payhere.secret') ?: env('PAYHERE_SECRET');
+        $payhereEnv = config('services.payhere.env') ?: env('PAYHERE_ENV', 'sandbox');
         $currency = 'LKR';
         
         $amount = number_format($rawPrice, 2, '.', '');
@@ -124,7 +125,7 @@ class CheckoutController extends Controller
             'city' => 'Colombo',
             'country' => 'Sri Lanka',
             'hash' => $hash,
-            'payhere_url' => env('PAYHERE_ENV', 'sandbox') === 'live' ? 'https://www.payhere.lk/pay/recurring' : 'https://sandbox.payhere.lk/pay/recurring'
+            'payhere_url' => $payhereEnv === 'live' ? 'https://www.payhere.lk/pay/recurring' : 'https://sandbox.payhere.lk/pay/recurring'
         ]);
     }
 }

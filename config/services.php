@@ -42,4 +42,10 @@ return [
         'sender_id' => env('SMSLENZ_SENDER_ID', 'FaithCore'),
     ],
 
+    'payhere' => [
+        'merchant_id' => env('PAYHERE_MERCHANT_ID'),
+        'secret' => env('PAYHERE_SECRET'),
+        'env' => env('PAYHERE_ENV', 'sandbox'),
+    ],
+
 ];
