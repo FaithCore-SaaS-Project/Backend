@@ -175,16 +175,43 @@ class WebhookController extends Controller
             $church = $subscription->church;
             $user = $church ? $church->users()->first() : null;
             $plan = $subscription->plan;
-            if ($user && $church && $plan) {
+            if ($church && $plan) {
+                // 1. Send confirmation email to both Admin and Church
                 try {
-                    \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\WelcomeMail(
-                        $user->first_name . ' ' . $user->last_name,
-                        $church->church_name,
-                        $church->registration_no,
-                        $plan->name
-                    ));
+                    $recipientEmails = array_filter(array_unique([
+                        $user ? $user->email : null,
+                        $church->email
+                    ]));
+
+                    foreach ($recipientEmails as $recEmail) {
+                        \Illuminate\Support\Facades\Mail::to($recEmail)->send(new \App\Mail\WelcomeMail(
+                            $user ? ($user->first_name . ' ' . $user->last_name) : 'Church Administrator',
+                            $church->church_name,
+                            $church->registration_no,
+                            $plan->name
+                        ));
+                    }
                 } catch (\Exception $e) {
                     \Illuminate\Support\Facades\Log::error('Failed to send payment welcome email: ' . $e->getMessage());
+                }
+
+                // 2. Send SMS confirmation to Admin Phone & Church Phone
+                try {
+                    $smsService = app(\App\Services\SmsService::class);
+                    $smsMessage = "FaithCore: Payment of LKR {$amount} received for {$church->church_name}. {$plan->name} plan activated successfully! Activation ID: {$church->registration_no}.";
+
+                    $phoneNumbers = array_filter(array_unique([
+                        $user ? $user->phone : null,
+                        $church->phone
+                    ]));
+
+                    foreach ($phoneNumbers as $phone) {
+                        if (!empty($phone)) {
+                            $smsService->sendSystemSms($phone, $smsMessage);
+                        }
+                    }
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error('Failed to send payment SMS: ' . $e->getMessage());
                 }
             }
         });
