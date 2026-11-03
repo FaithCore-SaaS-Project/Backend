@@ -40,6 +40,46 @@ class SmsService
     }
 
     /**
+     * Send direct system SMS (e.g., registration activation ID, password resets)
+     * using the platform credentials without church quota deduction.
+     */
+    public function sendSystemSms(string $contact, string $message)
+    {
+        // Format contact if needed (e.g. ensure 94 prefix)
+        $cleanContact = preg_replace('/[^0-9]/', '', $contact);
+        if (str_starts_with($cleanContact, '0')) {
+            $cleanContact = '94' . substr($cleanContact, 1);
+        } elseif (!str_starts_with($cleanContact, '94') && strlen($cleanContact) == 9) {
+            $cleanContact = '94' . $cleanContact;
+        }
+
+        $payload = [
+            'user_id' => $this->userId,
+            'api_key' => $this->apiKey,
+            'sender_id' => $this->defaultSenderId,
+            'message' => $message,
+            'contact' => $cleanContact,
+        ];
+
+        try {
+            $response = Http::post($this->apiUrl . '/send-sms', $payload);
+            $result = $response->json();
+
+            Log::info("System SMS sent to {$cleanContact}: " . json_encode($result));
+            return [
+                'success' => $response->successful() && ($result['success'] ?? false),
+                'data' => $result
+            ];
+        } catch (Exception $e) {
+            Log::error("System SMS failed: " . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * Send Bulk SMS on behalf of a church.
      * Handles deducting multiple credits.
      *

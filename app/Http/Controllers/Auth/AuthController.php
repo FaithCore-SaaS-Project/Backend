@@ -295,15 +295,34 @@ class AuthController extends Controller
                 'status' => 'active'
             ]);
 
+            // Send Welcome Email to both Admin Email and Church Email
             try {
-                \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\WelcomeMail(
-                    $user->first_name . ' ' . $user->last_name,
-                    $church->church_name,
-                    $church->registration_no,
-                    $plan->name
-                ));
+                $recipients = array_filter(array_unique([$user->email, $church->email]));
+                foreach ($recipients as $recipientEmail) {
+                    \Illuminate\Support\Facades\Mail::to($recipientEmail)->send(new \App\Mail\WelcomeMail(
+                        $user->first_name . ' ' . $user->last_name,
+                        $church->church_name,
+                        $church->registration_no,
+                        $plan->name
+                    ));
+                }
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error('Failed to send welcome email: ' . $e->getMessage());
+            }
+
+            // Send SMS notification with Activation Code to Admin Phone & Church Phone
+            try {
+                $smsService = app(\App\Services\SmsService::class);
+                $smsMessage = "Welcome to FaithCore! {$church->church_name} is registered. Your Activation ID is: {$church->registration_no}. Please save this ID to log in to the Desktop App.";
+
+                $phoneNumbers = array_filter(array_unique([$user->phone, $church->phone]));
+                foreach ($phoneNumbers as $phone) {
+                    if (!empty($phone)) {
+                        $smsService->sendSystemSms($phone, $smsMessage);
+                    }
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to send registration SMS: ' . $e->getMessage());
             }
         }
 
