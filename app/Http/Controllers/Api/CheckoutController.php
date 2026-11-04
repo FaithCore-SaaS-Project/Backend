@@ -106,26 +106,40 @@ class CheckoutController extends Controller
         // Generate the PayHere Hash
         $hash = strtoupper(md5($merchantId . $orderId . $amount . $currency . strtoupper(md5($merchantSecret))));
 
+        // Split name into first_name and last_name ensuring neither is empty (PayHere rejects empty last_name)
+        $fullName = trim($request->user()->name ?? 'Church Admin');
+        $nameParts = explode(' ', $fullName, 2);
+        $firstName = !empty($nameParts[0]) ? $nameParts[0] : 'Church';
+        $lastName = !empty($nameParts[1]) ? $nameParts[1] : 'Admin';
+
+        // Format a safe notify_url
+        $notifyUrl = config('app.url') . '/api/webhooks/payhere';
+        if (str_contains($notifyUrl, 'localhost')) {
+            // PayHere rejects localhost notify URLs in some sandbox validation routines
+            $notifyUrl = 'https://api.faithcore.org/api/webhooks/payhere';
+        }
+
         return response()->json([
             'merchant_id' => $merchantId,
             'return_url' => $request->success_url,
             'cancel_url' => $request->cancel_url,
-            'notify_url' => config('app.url') . '/api/webhooks/payhere',
+            'notify_url' => $notifyUrl,
             'order_id' => $orderId,
             'items' => 'FaithCore ' . $plan->name . ' Plan',
             'currency' => $currency,
             'amount' => $amount,
             'recurrence' => $isAnnual ? '1 Year' : '1 Month',
             'duration' => 'Forever',
-            'first_name' => $request->user()->name,
-            'last_name' => '',
-            'email' => $request->user()->email,
-            'phone' => '0770000000',
-            'address' => 'Sri Lanka',
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'email' => $request->user()->email ?? 'admin@faithcore.org',
+            'phone' => '0771234567',
+            'address' => 'FaithCore Church Office',
             'city' => 'Colombo',
             'country' => 'Sri Lanka',
             'hash' => $hash,
-            'payhere_url' => $payhereEnv === 'live' ? 'https://www.payhere.lk/pay/recurring' : 'https://sandbox.payhere.lk/pay/recurring'
+            // Unified PayHere form POST endpoint: /pay/checkout (supports both recurring & one-time)
+            'payhere_url' => $payhereEnv === 'live' ? 'https://www.payhere.lk/pay/checkout' : 'https://sandbox.payhere.lk/pay/checkout'
         ]);
     }
 }
