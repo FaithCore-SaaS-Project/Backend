@@ -61,12 +61,8 @@ class AuthController extends Controller
                     $subscriptionStatus = 'expired';
                 } else {
                     $subscriptionStatus = 'active';
-                    $activePlan = $subscription->plan;
                 }
-            }
-
-            if ($subscriptionStatus !== 'active') {
-                return response()->json(['message' => 'The subscription for this church has expired.'], 403);
+                $activePlan = $subscription->plan;
             }
 
             $user = \App\Models\User::where('email', $request->email)
@@ -98,6 +94,19 @@ class AuthController extends Controller
                 'event' => 'login_success',
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->header('User-Agent')
+            ]);
+
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'token' => $token,
+                'user' => $user,
+                'church' => $church,
+                'subscription_status' => $subscriptionStatus,
+                'plan' => $activePlan,
+                'roles' => $user->getRoleNames(),
+                'permissions' => $user->getAllPermissions()->pluck('name'),
+            ]);
             ]);
 
             $token = $user->createToken('auth_token')->plainTextToken;
@@ -156,12 +165,8 @@ class AuthController extends Controller
                     $subscriptionStatus = 'expired';
                 } else {
                     $subscriptionStatus = 'active';
-                    $activePlan = $subscription->plan;
                 }
-            }
-
-            if ($subscriptionStatus !== 'active') {
-                return response()->json(['message' => 'The subscription for this church has expired.'], 403);
+                $activePlan = $subscription->plan;
             }
 
             \Illuminate\Support\Facades\RateLimiter::clear($throttleKey);
