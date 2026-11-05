@@ -107,19 +107,6 @@ class AuthController extends Controller
                 'roles' => $user->getRoleNames(),
                 'permissions' => $user->getAllPermissions()->pluck('name'),
             ]);
-            ]);
-
-            $token = $user->createToken('auth_token')->plainTextToken;
-
-            return response()->json([
-                'token' => $token,
-                'user' => $user,
-                'church' => $church,
-                'subscription_status' => $subscriptionStatus,
-                'plan' => $activePlan,
-                'roles' => $user->getRoleNames(),
-                'permissions' => $user->getAllPermissions()->pluck('name'),
-            ]);
 
         } else {
             // MOBILE APP LOGIN FLOW
