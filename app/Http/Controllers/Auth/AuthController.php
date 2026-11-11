@@ -369,4 +369,132 @@ class AuthController extends Controller
             'churchName' => $church->church_name
         ]);
     }
+
+    /**
+     * Request Password Reset OTP
+     */
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'church_id' => 'nullable|string'
+        ]);
+
+        $query = \App\Models\User::where('email', $request->email);
+
+        if ($request->filled('church_id')) {
+            $church = \App\Models\Church::where('registration_no', $request->church_id)
+                                        ->orWhere('id', $request->church_id)
+                                        ->first();
+            if ($church) {
+                $query->where('church_id', $church->id);
+            }
+        }
+
+        $user = $query->first();
+
+        if (!$user) {
+            // For security, return generic message even if email not found
+            return response()->json([
+                'success' => true,
+                'message' => 'If this email is associated with a registered account, a verification code has been sent.'
+            ]);
+        }
+
+        // Generate a 6-digit OTP
+        $otp = (string) mt_rand(100000, 999999);
+        $cacheKey = 'password_reset_otp_' . strtolower($user->email);
+
+        // Store OTP in cache for 15 minutes
+        \Illuminate\Support\Facades\Cache::put($cacheKey, [
+            'otp' => $otp,
+            'user_id' => $user->id,
+            'church_id' => $user->church_id,
+            'attempts' => 0
+        ], now()->addMinutes(15));
+
+        // Dispatch OTP Email
+        try {
+            $churchName = $user->church ? $user->church->church_name : 'FaithCore Church';
+            $userName = trim($user->first_name . ' ' . $user->last_name) ?: 'Church Administrator';
+            \Illuminate\Support\Facades\Mail::to($user->email)->send(
+                new \App\Mail\PasswordResetOtpMail($otp, $userName, $churchName)
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Password Reset Mail Error: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'A 6-digit verification code has been sent to your email.'
+        ]);
+    }
+
+    /**
+     * Verify OTP and Reset Password
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required|string|size:6',
+            'password' => 'required|string|min:6'
+        ]);
+
+        $cacheKey = 'password_reset_otp_' . strtolower($request->email);
+        $cachedData = \Illuminate\Support\Facades\Cache::get($cacheKey);
+
+        if (!$cachedData) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The verification code has expired or is invalid. Please request a new one.'
+            ], 422);
+        }
+
+        if ((string) $cachedData['otp'] !== trim($request->otp)) {
+            $cachedData['attempts'] = ($cachedData['attempts'] ?? 0) + 1;
+            if ($cachedData['attempts'] >= 5) {
+                \Illuminate\Support\Facades\Cache::forget($cacheKey);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Too many invalid attempts. Please request a new verification code.'
+                ], 429);
+            }
+            \Illuminate\Support\Facades\Cache::put($cacheKey, $cachedData, now()->addMinutes(10));
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Incorrect verification code. Please check your email and try again.'
+            ], 422);
+        }
+
+        $user = \App\Models\User::find($cachedData['user_id']);
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User account not found.'
+            ], 404);
+        }
+
+        // Update Password
+        $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
+        $user->save();
+
+        // Clear OTP from Cache
+        \Illuminate\Support\Facades\Cache::forget($cacheKey);
+
+        // Log audit
+        \App\Models\AuditLog::create([
+            'church_id' => $user->church_id,
+            'user_id' => $user->id,
+            'event' => 'password_reset_success',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent')
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Your password has been reset successfully! You can now sign in.'
+        ]);
+    }
 }

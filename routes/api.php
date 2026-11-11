@@ -28,6 +28,8 @@ use App\Http\Controllers\Api\ReceiptController;
 Route::post('/login', [WebAuthController::class, 'login']);
 Route::post('/register', [WebAuthController::class, 'register']);
 Route::post('/activate', [WebAuthController::class, 'activate']);
+Route::post('/forgot-password', [WebAuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [WebAuthController::class, 'resetPassword']);
 
 // Mobile Authentication APIs
 Route::post('/mobile/login', [\App\Http\Controllers\Api\Mobile\AuthController::class, 'login']);
