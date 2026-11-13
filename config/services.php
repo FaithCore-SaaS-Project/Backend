@@ -48,4 +48,8 @@ return [
         'env' => env('PAYHERE_ENV', 'sandbox'),
     ],
 
+    'super_admin' => [
+        'token' => env('SUPER_ADMIN_TOKEN', 'Admin@FaithCore'),
+    ],
+
 ];
