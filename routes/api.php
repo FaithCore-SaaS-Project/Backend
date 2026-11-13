@@ -46,6 +46,7 @@ Route::prefix('super-admin')->middleware('super_admin')->group(function () {
     Route::get('/subscriptions', [\App\Http\Controllers\Api\SuperAdminController::class, 'subscriptions']);
     Route::get('/payments', [\App\Http\Controllers\Api\SuperAdminController::class, 'payments']);
     Route::post('/churches/{id}/toggle-status', [\App\Http\Controllers\Api\SuperAdminController::class, 'toggleChurchStatus']);
+    Route::delete('/churches/{id}', [\App\Http\Controllers\Api\SuperAdminController::class, 'deleteChurch']);
     Route::post('/churches/{id}/sms-settings', [\App\Http\Controllers\Api\SuperAdminController::class, 'updateSmsSettings']);
 
     // Secure Admin SMS Requests

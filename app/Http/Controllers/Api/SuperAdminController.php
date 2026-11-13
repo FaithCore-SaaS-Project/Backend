@@ -101,4 +101,32 @@ class SuperAdminController extends Controller
             'church' => $church
         ]);
     }
+
+    /**
+     * Permanently delete a church and its associated cascading data
+     */
+    public function deleteChurch(Request $request, $id)
+    {
+        $church = Church::findOrFail($id);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($church) {
+            // Delete child relational data
+            \App\Models\User::where('church_id', $church->id)->delete();
+            \App\Models\Member::where('church_id', $church->id)->delete();
+            \App\Models\Family::where('church_id', $church->id)->delete();
+            \App\Models\Event::where('church_id', $church->id)->delete();
+            \App\Models\Subscription::where('church_id', $church->id)->delete();
+            \App\Models\Payment::where('church_id', $church->id)->delete();
+            \App\Models\Invoice::where('church_id', $church->id)->delete();
+            \App\Models\AuditLog::where('church_id', $church->id)->delete();
+
+            // Delete Church
+            $church->delete();
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Church and all associated records deleted permanently.'
+        ]);
+    }
 }
