@@ -25,7 +25,7 @@ use App\Http\Controllers\Api\WebhookController;
 use App\Http\Controllers\Api\ReceiptController;
 
 // Web SaaS Authentication APIs
-Route::post('/login', [WebAuthController::class, 'login']);
+Route::post('/login', [WebAuthController::class, 'login'])->name('login');
 Route::post('/register', [WebAuthController::class, 'register']);
 Route::post('/activate', [WebAuthController::class, 'activate']);
 Route::post('/forgot-password', [WebAuthController::class, 'forgotPassword']);
