@@ -110,15 +110,34 @@ class SuperAdminController extends Controller
         $church = Church::findOrFail($id);
 
         \Illuminate\Support\Facades\DB::transaction(function () use ($church) {
-            // Delete child relational data
-            \App\Models\User::where('church_id', $church->id)->delete();
-            \App\Models\Member::where('church_id', $church->id)->delete();
-            \App\Models\Family::where('church_id', $church->id)->delete();
-            \App\Models\Event::where('church_id', $church->id)->delete();
-            \App\Models\Subscription::where('church_id', $church->id)->delete();
-            \App\Models\Payment::where('church_id', $church->id)->delete();
-            \App\Models\Invoice::where('church_id', $church->id)->delete();
-            \App\Models\AuditLog::where('church_id', $church->id)->delete();
+            // Delete all child relational data across all modules
+            \Illuminate\Support\Facades\DB::table('users')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('members')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('families')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('departments')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('department_members')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('events')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('event_registrations')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('event_attendances')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('finance_income')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('finance_expenses')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('finance_categories')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('bank_accounts')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('budgets')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('documents')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('letters')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('certificates')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('receipts')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('subscriptions')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('payments')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('invoices')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('audit_logs')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('settings')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('prayer_requests')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('announcements')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('church_services')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('sms_topup_requests')->where('church_id', $church->id)->delete();
+            \Illuminate\Support\Facades\DB::table('saved_reports')->where('church_id', $church->id)->delete();
 
             // Delete Church
             $church->delete();
